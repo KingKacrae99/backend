@@ -15,7 +15,8 @@ const productSchema = new Schema({
     },
     description: String,
     category: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'category',
         required: true
     },
     costPrice: {
@@ -42,6 +43,11 @@ const productSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Supplier'
     },
+    unit: {
+        type: String,
+        enum: ['Pieces', 'Packs', 'Dozen', 'Box'],
+        default: 'Pieces',
+    },
     createdAt: {
         type: Date,
         default: Date.now
@@ -52,6 +58,6 @@ const productSchema = new Schema({
     { timestamps: true}
 );
 
-const products = mongoose.model('product', productSchema);
+const products = mongoose.model('Product', productSchema);
 
 module.exports = products

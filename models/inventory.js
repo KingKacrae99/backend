@@ -25,4 +25,6 @@ const inventoryAuditSchema = new mongoose.Schema({
     { timestamps: true }
 );
 
-module.exports = mongoose.model('InventoryAudit', inventoryAuditSchema);
+const inventory = mongoose.model('InventoryAudit', inventoryAuditSchema)
+
+module.exports = inventory;

@@ -6,6 +6,7 @@ const orders = require('./order')
 const customers = require('./customer')
 const inventory = require('./inventory')
 const suppliers = require('./supplier')
+const category = require('./category')
 mongoose.Promise = global.Promise;
 
 const db = {};
@@ -17,5 +18,6 @@ db.orders = orders;
 db.customer = customers;
 db.inventory = inventory;
 db.supplier = suppliers;
+db.category - category;
 
 module.exports = db;

@@ -8,7 +8,7 @@ const errorMiddleware = async (err, req, res, next) => {
         message = 'Oh no! There was a crash.'
     }
     return res.status(err.status || 500).json({
-        status: err.status || 500,
+        status: err.status || "Server Error",
         message: message
     })
 }
