@@ -1,645 +1,295 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "Business Mgt API",
-    "description": "Inventory and Billing Web Services (Backend)",
-    "version": "1.0.0"
+    "title": "Business Management API",
+    "description": "A professional API for managing inventory, suppliers, products, categories, and orders within a business management system. It supports billing, auditing, and user roles (Admin, Manager, Staff, Client).",
+    "version": "1.0.0",
+    "contact": {
+      "name": "API Support",
+      "email": "support@businessmgtapi.com"
+    }
   },
-  "host": "localhost:3000",
+  "host": "business-mgt-api.onrender.com",
   "basePath": "/",
-  "schemes": [
-    "http"
-  ],
+  "schemes": ["https"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+
   "paths": {
-    "/api": {
+      "/": {
       "get": {
-        "description": "",
+        "description": "Root endpoint",
         "responses": {
-          "default": {
-            "description": ""
-          }
+          "200": { "description": "API is running" }
         }
       }
     },
-    "/auth/google": {
+    "/categories": {
       "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/auth/google/callback": {
-      "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/auth/logout": {
-      "get": {
-        "description": "",
+        "summary": "Get all categories",
+        "tags": ["Categories"],
         "responses": {
           "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
-    "/user/": {
-      "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/user/{id}": {
-      "put": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "Bad Request"
+            "description": "List of all product categories",
+            "schema": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/Category" }
+            }
           }
         }
       },
-      "get": {
-        "description": "",
+      "post": {
+        "summary": "Create a new category",
+        "tags": ["Categories"],
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
+            "in": "body",
+            "name": "body",
             "required": true,
-            "type": "string"
+            "schema": { "$ref": "#/definitions/Category" }
           }
         ],
         "responses": {
-          "default": {
-            "description": ""
+          "201": { "description": "Category created successfully" },
+          "400": { "description": "Invalid input" }
+        }
+      }
+    },
+
+    "/products": {
+      "get": {
+        "summary": "Get all products",
+        "tags": ["Products"],
+        "responses": {
+          "200": {
+            "description": "List of all products",
+            "schema": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/Product" }
+            }
           }
         }
       },
-      "delete": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/products/": {
-      "get": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/products/{id}": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/products/add": {
       "post": {
-        "description": "",
-        "responses": {
-          "400": {
-            "description": "Bad Request"
-          }
-        }
-      }
-    },
-    "/products/edit/{id}": {
-      "put": {
-        "description": "",
+        "summary": "Create a new product",
+        "tags": ["Products"],
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
+            "in": "body",
+            "name": "body",
             "required": true,
-            "type": "string"
+            "schema": { "$ref": "#/definitions/Product" }
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request"
-          }
+          "201": { "description": "Product created successfully" },
+          "400": { "description": "Invalid input data" }
         }
       }
     },
-    "/products/delete/{id}": {
-      "delete": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/category/": {
+
+    "/orders": {
       "get": {
-        "description": "",
+        "summary": "Retrieve all orders",
+        "tags": ["Orders"],
         "responses": {
-          "default": {
-            "description": ""
+          "200": {
+            "description": "List of orders",
+            "schema": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/Order" }
+            }
           }
         }
-      }
-    },
-    "/category/{id}": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/category/add": {
+      },
       "post": {
-        "description": "",
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/category/update/{id}": {
-      "put": {
-        "description": "",
+        "summary": "Create a new order",
+        "tags": ["Orders"],
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
+            "in": "body",
+            "name": "body",
             "required": true,
-            "type": "string"
+            "schema": { "$ref": "#/definitions/Order" }
           }
         ],
         "responses": {
-          "default": {
-            "description": ""
-          }
+          "201": { "description": "Order created successfully" },
+          "400": { "description": "Invalid input" }
         }
       }
     },
-    "/category/delete/{id}": {
-      "delete": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/order/": {
+
+    "/suppliers": {
       "get": {
-        "description": "",
+        "summary": "Get all suppliers",
+        "tags": ["Suppliers"],
         "responses": {
-          "default": {
-            "description": ""
+          "200": {
+            "description": "List of suppliers",
+            "schema": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/Supplier" }
+            }
           }
         }
-      }
-    },
-    "/order/{id}": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/order/update/{id}": {
-      "put": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "Bad Request"
-          }
-        }
-      }
-    },
-    "/order/add": {
+      },
       "post": {
-        "description": "",
-        "responses": {
-          "400": {
-            "description": "Bad Request"
-          }
-        }
-      }
-    },
-    "/order/delete/{id}": {
-      "delete": {
-        "description": "",
+        "summary": "Create a new supplier",
+        "tags": ["Suppliers"],
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
+            "in": "body",
+            "name": "body",
             "required": true,
-            "type": "string"
+            "schema": { "$ref": "#/definitions/Supplier" }
           }
         ],
         "responses": {
-          "default": {
-            "description": ""
-          }
+          "201": { "description": "Supplier created successfully" },
+          "400": { "description": "Invalid data" }
         }
       }
     },
-    "/suppliers/add": {
+
+    "/audits": {
+      "get": {
+        "summary": "Get all inventory audit logs",
+        "tags": ["Inventory Audit"],
+        "responses": {
+          "200": {
+            "description": "List of inventory audit records",
+            "schema": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/InventoryAudit" }
+            }
+          }
+        }
+      },
       "post": {
-        "description": "",
-        "responses": {
-          "400": {
-            "description": "Bad Request"
-          }
-        }
-      }
-    },
-    "/suppliers/update/{id}": {
-      "put": {
-        "description": "",
+        "summary": "Record an inventory audit action",
+        "tags": ["Inventory Audit"],
         "parameters": [
           {
-            "name": "id",
-            "in": "path",
+            "in": "body",
+            "name": "body",
             "required": true,
-            "type": "string"
+            "schema": { "$ref": "#/definitions/InventoryAudit" }
           }
         ],
         "responses": {
-          "400": {
-            "description": "Bad Request"
-          }
+          "201": { "description": "Audit record created" }
         }
       }
     },
-    "/suppliers/{id}": {
+
+    "/users": {
       "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
+        "summary": "Get all users",
+        "tags": ["Users"],
         "responses": {
-          "default": {
-            "description": ""
-          }
-        }
-      }
-    },
-    "/inv/": {
-      "get": {
-        "description": "",
-        "responses": {
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
-    "/inv/{id}": {
-      "get": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
-    "/inv/update/{id}": {
-      "put": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
-    "/invdelete/{id}": {
-      "delete": {
-        "description": "",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized"
+          "200": {
+            "description": "List of users",
+            "schema": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/User" }
+            }
           }
         }
       }
     }
   },
+
   "definitions": {
-    "User": {
+    "Category": {
       "type": "object",
+      "required": ["name"],
       "properties": {
-        "googleId": {
-          "type": "string",
-          "example": "1234567890abcdef"
-        },
-        "fullName": {
-          "type": "string",
-          "example": "John Doe"
-        },
-        "email": {
-          "type": "string",
-          "example": "johndoe@example.com"
-        },
-        "picture": {
-          "type": "string",
-          "example": "https://example.com/avatar.jpg"
-        },
-        "local": {
-          "type": "string",
-          "example": "en-US"
-        },
-        "locale": {
-          "type": "string",
-          "example": "US"
-        },
-        "role": {
-          "type": "string",
-          "example": "Client"
-        },
-        "joinedAt": {
-          "type": "string",
-          "example": "2025-10-16T00:00:00.000Z"
-        }
+        "name": { "type": "string", "example": "Electronics" }
       }
     },
-    "Supplier": {
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string",
-          "example": "MedTech Supplies Ltd."
-        },
-        "email": {
-          "type": "string",
-          "example": "contact@medtech.com"
-        },
-        "phone": {
-          "type": "string",
-          "example": "+2348012345678"
-        },
-        "address": {
-          "type": "string",
-          "example": "12 Main Street, Lagos, Nigeria"
-        },
-        "productsSupplied": {
-          "type": "array",
-          "example": [
-            "60d5f4832b8b4f1e9c1a1234"
-          ],
-          "items": {
-            "type": "string"
-          }
-        },
-        "createdAt": {
-          "type": "string",
-          "example": "2025-10-16T00:00:00.000Z"
-        },
-        "updatedAt": {
-          "type": "string",
-          "example": "2025-10-16T00:00:00.000Z"
-        }
-      }
-    },
+
     "Product": {
       "type": "object",
+      "required": ["name", "sku", "category", "costPrice", "sellPrice"],
       "properties": {
-        "name": {
-          "type": "string",
-          "example": "Paracetamol"
-        },
-        "sku": {
-          "type": "string",
-          "example": "PRC-001"
-        },
-        "description": {
-          "type": "string",
-          "example": "Pain relief tablet"
-        },
-        "category": {
-          "type": "string",
-          "example": "60d5f4832b8b4f1e9c1a5678"
-        },
-        "costPrice": {
-          "type": "number",
-          "example": 100
-        },
-        "sellPrice": {
-          "type": "number",
-          "example": 150
-        },
-        "quantity": {
-          "type": "number",
-          "example": 200
-        },
-        "reorderLevel": {
-          "type": "number",
-          "example": 10
-        },
-        "supplierId": {
-          "type": "string",
-          "example": "60d5f4832b8b4f1e9c1a1234"
-        },
-        "unit": {
-          "type": "string",
-          "example": "Packs"
-        },
-        "createdAt": {
-          "type": "string",
-          "example": "2025-10-16T00:00:00.000Z"
-        },
-        "updatedAt": {
-          "type": "string",
-          "example": "2025-10-16T00:00:00.000Z"
-        }
+        "name": { "type": "string", "example": "Wireless Mouse" },
+        "sku": { "type": "string", "example": "WMX-001" },
+        "description": { "type": "string", "example": "Ergonomic wireless mouse" },
+        "category": { "type": "string", "example": "671cbe892d3f48a60a1e4c9b" },
+        "costPrice": { "type": "number", "example": 20.5 },
+        "sellPrice": { "type": "number", "example": 35.99 },
+        "quantity": { "type": "number", "example": 50 },
+        "reorderLevel": { "type": "number", "example": 5 },
+        "supplierId": { "type": "string", "example": "671cbe1b2d3f48a60a1e4c97" },
+        "unit": { "type": "string", "enum": ["Pieces", "Packs", "Dozen", "Box"], "example": "Pieces" }
       }
     },
-    "OrderItem": {
+
+    "Supplier": {
       "type": "object",
+      "required": ["name"],
       "properties": {
-        "productId": {
-          "type": "string",
-          "example": "60d5f4832b8b4f1e9c1a5678"
-        },
-        "name": {
-          "type": "string",
-          "example": "Paracetamol"
-        },
-        "quantity": {
-          "type": "number",
-          "example": 5
-        },
-        "price": {
-          "type": "number",
-          "example": 150
-        },
-        "subtotal": {
-          "type": "number",
-          "example": 750
+        "name": { "type": "string", "example": "ABC Supplies Ltd" },
+        "email": { "type": "string", "example": "info@abcsupplies.com" },
+        "phone": { "type": "string", "example": "+2348100000000" },
+        "address": { "type": "string", "example": "12, Market Road, Lagos" },
+        "productsSupplied": {
+          "type": "array",
+          "items": { "type": "string" },
+          "example": ["671cbe892d3f48a60a1e4c9b"]
         }
       }
     },
+
     "Order": {
       "type": "object",
+      "required": ["items", "total"],
       "properties": {
         "items": {
           "type": "array",
           "items": {
-            "$ref": "#/definitions/OrderItem"
+            "type": "object",
+            "properties": {
+              "productId": { "type": "string", "example": "671cbe892d3f48a60a1e4c9b" },
+              "name": { "type": "string", "example": "Wireless Mouse" },
+              "quantity": { "type": "number", "example": 2 },
+              "price": { "type": "number", "example": 35.99 },
+              "subtotal": { "type": "number", "example": 71.98 }
+            }
           }
         },
-        "total": {
-          "type": "number",
-          "example": 750
-        },
-        "tax": {
-          "type": "number",
-          "example": 0
-        },
-        "discount": {
-          "type": "number",
-          "example": 0
-        },
-        "status": {
-          "type": "string",
-          "example": "Pending"
-        },
-        "createdAt": {
-          "type": "string",
-          "example": "2025-10-16T00:00:00.000Z"
-        },
-        "updatedAt": {
-          "type": "string",
-          "example": "2025-10-16T00:00:00.000Z"
-        }
+        "total": { "type": "number", "example": 71.98 },
+        "tax": { "type": "number", "example": 5 },
+        "discount": { "type": "number", "example": 0 },
+        "status": { "type": "string", "enum": ["Pending", "Paid"], "example": "Pending" }
       }
     },
-    "Category": {
+
+    "InventoryAudit": {
       "type": "object",
+      "required": ["productId", "userId", "action", "quantityChanged"],
       "properties": {
-        "name": {
-          "type": "string",
-          "example": "Pharmaceuticals"
-        }
+        "productId": { "type": "string", "example": "671cbe892d3f48a60a1e4c9b" },
+        "userId": { "type": "string", "example": "671cbfcd2d3f48a60a1e4d2a" },
+        "action": { "type": "string", "enum": ["Add Stock", "Remove Stock", "Sale", "Adjustment"], "example": "Add Stock" },
+        "quantityChanged": { "type": "number", "example": 10 },
+        "note": { "type": "string", "example": "Restocked 10 units" },
+        "isRead": { "type": "boolean", "example": false }
+      }
+    },
+
+    "User": {
+      "type": "object",
+      "required": ["googleId", "fullName", "email", "picture"],
+      "properties": {
+        "googleId": { "type": "string", "example": "1012938479234" },
+        "fullName": { "type": "string", "example": "John Doe" },
+        "email": { "type": "string", "example": "john.doe@gmail.com" },
+        "picture": { "type": "string", "example": "https://lh3.googleusercontent.com/photo.jpg" },
+        "locale": { "type": "string", "example": "en" },
+        "role": { "type": "string", "enum": ["Admin", "Manager", "Staff", "Client"], "example": "Manager" },
+        "joinedAt": { "type": "string", "format": "date-time" }
       }
     }
   }
