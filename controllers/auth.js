@@ -3,12 +3,12 @@ const auth = {}
 
 auth.home = async (req,res,next) => {
     try {
-        if (req.user) {
+        if (req.session.user) {
             return res.send(`Welcome ${req.user.fullName}`);
         }
         res.send("Logged Out")
     } catch (error) {
-        
+        next(error)
     }
 }
 
