@@ -5,13 +5,13 @@
     "description": "Inventory and Billing Web Services (Backend)",
     "version": "1.0.0"
   },
-  "host": "localhost:3000",
+  "host": "business-mgt-api.onrender.com",
   "basePath": "/",
-  "schemes": ["http"],
+  "schemes": ["https"],
   "consumes": ["application/json"],
   "produces": ["application/json"],
   "paths": {
-    "/api": {
+    "/": {
       "get": {
         "description": "API root endpoint",
         "responses": {
