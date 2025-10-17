@@ -7,7 +7,6 @@ const {
     validateUpdateSupplier,
     validationHandler,
 } = require('../middleware/supplierValidation');
-const privilege = require("../middleware/auth")
 
 router.post('/add',privilege.isAuthenticated,privilege.isManagerOrAdmin, validateAddSupplier, validationHandler, wrapper(supplierController.addSupplier))
 router.put('/update/:id',privilege.isAuthenticated,privilege.isAdmin, validateUpdateSupplier, validationHandler, wrapper(supplierController.updateSupplier))
