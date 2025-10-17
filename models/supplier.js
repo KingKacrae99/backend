@@ -6,7 +6,6 @@ const supplierSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  contactName: String,
   email: {
     type: String,
     lowercase: true
@@ -16,7 +15,7 @@ const supplierSchema = new mongoose.Schema({
   productsSupplied: [
     {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'product'
+        ref: 'Product'
     }
   ]
 },

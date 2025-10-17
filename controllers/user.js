@@ -3,9 +3,24 @@ const users = mongodb.users
 const {createError}= require('../utils/index')
 const Types = mongodb.mongoose.Types
 
+
+
 /******************************************
  *  Retrieve all users
 *******************************************/
+
+/*
+#swagger.tags = [users]
+#swagger.description = 'Retrieve all users'
+#swagger.responses[200] = {
+     description:"All users",
+     schema:{#ref: '#/definitions/users'}
+}
+#swagger.responses[404] = {
+    description: "Users not found",
+    schema: {#ref: '#/definitions/Error'}
+}
+*/
 const getUsers = async (req,res,next) => {
     try {
 
@@ -26,47 +41,84 @@ const getUsers = async (req,res,next) => {
 /*************************************************
  * Update user by Id 
 *************************************************/
-const updateUser= async (req,res,next) => {
+
+/* 
+#swagger.tags = [users]
+#swagger.description = 'Update user information by  their ID'
+#swagger.parameters['id'] = {
+    in: 'path',
+    description: 'ID of the user to be updated.',
+    required: true,
+    type: 'integer'
+}
+#swagger.responses[200]={
+    description:'Updated successfully'
+    schema: {$ref: '#/definitions/users'}
+}
+#swagger.responses[400] = {
+    description:'Update failed',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
+const updateUser = async (req, res, next) => {
     try {
-        const userId = req.params.id;
-        if (!Types.ObjectId.isValid(userId)) {
-            return  next(createError(400,'Invalid user Id'))
-        }
-        const existingUser = await users.findById(userId)
-        if (!existingUser) {
-            return next(createError(404, "User does not exist"))
-        }
-        const newInfo = {
-            googleId: req.body.googleId,
-            fullName: req.body.fullName,
-            email: req.body.email,
-            picture: req.body.picture,
-            role: req.body.role
-        }
+        const { id: userId } = req.params;
+        const { googleId, fullName, email, picture, role } = req.body;
 
-        //Update retrieved data
-        const filter = { _id: userId };
-        const updateUser = await users.replaceOne(filter, newInfo);
+        const updateInfo = {
+            ...(fullName && { fullName }),
+            ...(email && { email }),
+            ...(picture && { picture }),
+            ...(role && { role }),
+        };
 
-        if (updateUser.modifiedCount === 0) {
-            return next(createError(400,"Updated process failed!"))
+        const updatedUser = await users.findByIdAndUpdate(
+            userId,
+            updateInfo,
+            { 
+                new: true,
+                runValidators: true, 
+            }
+        );
+
+        if (!updatedUser) {
+            return next(createError(404, 'User does not exist.'));
         }
 
         return res.status(200).json({
             status: 'success',
-            message: 'Update was successful',
-            result: updateUser
+            message: 'User was successfully updated.',
+            result: updatedUser
         });
 
-     } catch (err) {
-        next(err)
+    } catch (err) {
+        next(err);
     }
-}
+};
 
 /****************************************
  * Retrieve user by ID
 ****************************************/
-const getUser= async (req,res,next) => {
+
+/* 
+#swagger.tags = [users]
+#swagger.description = 'Retrieve user's information by their ID'
+#swagger.parameters['id'] = {
+    in: 'path',
+    description: 'ID of the user to retrieve.',
+    required: true,
+    type: 'integer'
+}
+#swagger.responses[200] = {
+    description:'User detail'
+    schema: {$ref: '#/definitions/users'}
+}
+#swagger.responses[400] = {
+    description:'User not found',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
+const getUser = async (req, res, next) => {
     try {
         // get ID from req.params
         const userId = req.params.id;
@@ -94,7 +146,26 @@ const getUser= async (req,res,next) => {
 /***************************************
  *  Delete User 
 ****************************************/
-const removeUser= async (req,res,next) => {
+
+/* 
+#swagger.tags = [users]
+#swagger.description = 'Delete user by their unique ID'
+#swagger.parameters['id'] = {
+    in: 'path',
+    description: 'ID of the user to Delete.',
+    required: true,
+    type: 'integer'
+}
+#swagger.responses[200]={
+    description:'Delete successfully'
+    schema: {$ref: '#/definitions/users'}
+}
+#swagger.responses[400] = {
+    description:'Delete failed',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
+const removeUser = async (req, res, next) => {
     try {
         const userId = req.params.id;
         if (Types.ObjectId.isValid(userId)) {

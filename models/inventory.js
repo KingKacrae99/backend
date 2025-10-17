@@ -1,15 +1,16 @@
 const mongoose = require('mongoose')
-const { schema } = mongoose
+
 
 const inventoryAuditSchema = new mongoose.Schema({
   productId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'product',
+    ref: 'Product',
     required: true
   },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'users'
+    ref: 'users',
+    required: true
   },
   action: {
     type: String,
@@ -20,11 +21,15 @@ const inventoryAuditSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
+  isRead: {
+    type: Boolean,
+    default: false
+  },
   note: String
 },
     { timestamps: true }
 );
 
-const inventory = mongoose.model('InventoryAudit', inventoryAuditSchema)
+const InventoryAudit = mongoose.model('InventoryAudit', inventoryAuditSchema)
 
-module.exports = inventory;
+module.exports = InventoryAudit;

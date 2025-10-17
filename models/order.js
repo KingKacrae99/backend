@@ -2,22 +2,16 @@ const mongoose = require('mongoose')
 const { schema } = mongoose
 
 const orderSchema = new mongoose.Schema({
-    orderNumber: {
-        type: String,
-        required: true,
-        unique: true,
-    },
-    customId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Customer',
-        required: true,
-    },
     items: [
         {
             productId: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Product',
                 required: true,
+            },
+            name: {
+                type: String,
+                required: true
             },
             quantity: {
                 type: Number,
@@ -28,6 +22,10 @@ const orderSchema = new mongoose.Schema({
                 type: Number,
                 required: true,
                 min: 0,
+            },
+            subtotal: {
+                type: Number,
+                required: true
             }
         }
     ],
@@ -45,7 +43,7 @@ const orderSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['Pending', 'Paid', 'Shipped', 'Cancelled'],
+        enum: ['Pending', 'Paid'],
         default: 'Pending',
     }
 },

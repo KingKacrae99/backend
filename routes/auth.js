@@ -5,7 +5,7 @@ const authController = require('../controllers/auth');
 
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }))
 router.get('/google/callback', passport.authenticate('google', {
-    failureRedirect: '/api',
+    failureRedirect: '/',
     session: true
 }), authController.callback);
 router.get('/logout', auth.logout)

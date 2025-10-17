@@ -16,7 +16,7 @@ const productSchema = new Schema({
     description: String,
     category: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'category',
+        ref: 'Category',
         required: true
     },
     costPrice: {
@@ -47,13 +47,7 @@ const productSchema = new Schema({
         type: String,
         enum: ['Pieces', 'Packs', 'Dozen', 'Box'],
         default: 'Pieces',
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    },
-    updatedAt: Date
-
+    }
     },
     { timestamps: true}
 );

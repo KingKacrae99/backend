@@ -6,7 +6,20 @@ const { createError } = require('../utils/index')
 /************************************************
  *  Retrieve all categories
 ************************************************/
-const getCategories = async (req,res,next) => {
+
+/* 
+#swagger.tags = [Category]
+#swagger.description = 'Retrieve all product categories'
+#swagger.responses[200]={
+    description:'Categories found'
+    schema: {$ref: '#/definitions/Category'}
+}
+#swagger.responses[400] = {
+    description:'Categories not found',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
+const getCategories = async (req, res, next) => {
     try {
         const categories = await category.find();
         if (categories === 0) {
@@ -25,7 +38,26 @@ const getCategories = async (req,res,next) => {
 /********************************************
  *  Retrieve Category By ID
 *********************************************/
-const getcategoryById = async (req,res,next) => {
+
+/* 
+#swagger.tags = [Category]
+#swagger.description = 'Retrieve category by unique ID'
+#swagger.parameters['id'] = {
+    in: 'path',
+    description: 'ID of the category to  be retrieved.',
+    required: true,
+    type: 'integer'
+}
+#swagger.responses[200]={
+    description:'Category details'
+    schema: {$ref: '#/definitions/Category'}
+}
+#swagger.responses[400] = {
+    description:'Category not found',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
+const getcategoryById = async (req, res, next) => {
     try {
         const catId = req.params.catId
         if (!Types.ObjectId.isValid(catId)) {
@@ -49,7 +81,25 @@ const getcategoryById = async (req,res,next) => {
 /*******************************************
  *  ADD CATEGORY
 ********************************************/
-const addCategory = async (req,res,next) => {
+
+/* 
+#swagger.tags = [Categories]
+#swagger.description = 'Create Category'
+#swagger.parameters['body'] = {
+    in: 'body',
+    required: true,
+    schema: { $ref: '#/definitions/Category' }
+}
+#swagger.responses[201]={
+    description:'Category Created Successfully'
+    schema: {$ref: '#/definitions/Category'}
+}
+#swagger.responses[400] = {
+    description:'Category creation failed',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
+const addCategory = async (req, res, next) => {
     try {
         if (!req.body) {
             return next(createError(400,"No data was provided"))
@@ -76,7 +126,26 @@ const addCategory = async (req,res,next) => {
 /******************************************
  *  UPDATE CATEGORY BY ID
 ******************************************/
-const updateCategoryId = async (req,res,next) => {
+
+/* 
+#swagger.tags = [Category]
+#swagger.description = 'Update category by unique ID'
+#swagger.parameters['id'] = {
+    in: 'path',
+    description: 'ID of the category to  be updated.',
+    required: true,
+    type: 'integer'
+}
+#swagger.responses[200]={
+    description:'Updated Successfully'
+    schema: {$ref: '#/definitions/Category'}
+}
+#swagger.responses[400] = {
+    description:'Update failed',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
+const updateCategoryId = async (req, res, next) => {
     try {
         const catId = req.params.id;
         if (!Types.ObjectId.isValid(catId)) {
@@ -112,6 +181,25 @@ const updateCategoryId = async (req,res,next) => {
 /************************************************
  * Delete Category By ID 
 *************************************************/
+
+/* 
+#swagger.tags = [Category]
+#swagger.description = 'Delete category by unique ID'
+#swagger.parameters['id'] = {
+    in: 'path',
+    description: 'ID of the category to  be deleted.',
+    required: true,
+    type: 'integer'
+}
+#swagger.responses[200]={
+    description:'Deleted Successfully'
+    schema: {$ref: '#/definitions/Category'}
+}
+#swagger.responses[400] = {
+    description:'Delete failed',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
 const removeCategoryId = async (req, res, next) => {
     try {
         const catId = req.params.id;

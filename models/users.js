@@ -20,6 +20,7 @@ const userSchema = new Schema({
         type: String,
         required: true
     },
+    local: String,
     locale: String,
     role: {
         type: String,

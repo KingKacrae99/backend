@@ -1,6 +1,6 @@
 const mongodb = require('../models/index')
-const category = mongodb.category
 const utils = {}
+const { validationResult } = require('express-validator');
 
 /**************************************
  * Error helper function
@@ -11,29 +11,35 @@ function createError(status, message) {
     return err
 }
 
+// Middleware to handle validation results
+utils.handleValidationErrors = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ status: 'fail', errors: errors.array() });
+    }
+    next();
+};
+
 /****************************************
  * Generate store keeping unit
 *****************************************/
-utils.generateSku = async (products) => {
-    let productCat;
-    let name;
+utils.generateSku = async (product,category) => {
+    let productCat = category;
+    let name = product;
     let code;
 
-    products.forEach(product => {
-        productCat = product.category;
-        name = product.name;
-    });
-
-    const cat = await category.findById(productCat);
+    const cat = await mongodb.category.findById(productCat);
 
     if (!cat) {
         return null
     }
 
-    if (products.length === 0) {
+    const allProduct = await mongodb.products.find()
+
+    if (allProduct.length === 0) {
         code = 1
     } else {
-        code = products.length + 1; 
+        code = allProduct.length + 1; 
     }
     
     let catCode = cat.substring(0, 3).toUpperCase();

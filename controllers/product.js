@@ -2,10 +2,25 @@ const mongodb = require('../models/index')
 const { utils, createError } = require('../utils/index')
 const products = mongodb.products
 const Types = mongodb.mongoose.Types
+const invAudit = require('./inventoryAudit')
+
 
 /********************************************
  * Retrieve All Products
 **********************************************/
+
+/* 
+#swagger.tags = [Product]
+#swagger.description = 'Retrieve all the products'
+#swagger.responses[200]={
+    description:'All Products'
+    schema: {$ref: '#/definitions/Product'}
+}
+#swagger.responses[400] = {
+    description:'Products not found',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
 const getProducts = async (req,res,next) => {
     try {
         const allProduct = await products.find().sort({ _id: -1 })
@@ -27,7 +42,26 @@ const getProducts = async (req,res,next) => {
 /******************************************
  *  Retrieve Product By ID
 *******************************************/
-const getproduct =async (req,res,next) => {
+
+/* 
+#swagger.tags = [Product]
+#swagger.description = 'Retrieve product by unique ID'
+#swagger.parameters['id'] = {
+    in: 'path',
+    description: 'ID of the product to retrieve.',
+    required: true,
+    type: 'integer'
+}
+#swagger.responses[200]={
+    description:'Product details'
+    schema: {$ref: '#/definitions/Product'}
+}
+#swagger.responses[400] = {
+    description:'Product not found',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
+const getproduct = async (req, res, next) => {
     try {
         const productId = req.params.id;
         if (Types.ObjectId.isValid(productId)) {
@@ -53,104 +87,219 @@ const getproduct =async (req,res,next) => {
 /**************************************************
  * Add product By ID
 **************************************************/
-const addProductId= async (req,res,next) => {
+
+/* 
+#swagger.tags = [Products]
+#swagger.description = 'Create new product by unique ID'
+#swagger.parameters['body'] = {
+    in: 'body',
+    description: 'Product information',
+    required: true,
+    schema: { $ref: '#/definitions/Product' }
+}
+#swagger.responses[201]={
+    description:'Product created Successfully'
+    schema: {$ref: '#/definitions/Product'}
+}
+#swagger.responses[400] = {
+    description:'Product creation failed',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
+const addProductId = async (req, res, next) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
-        if (!req.body){
-            return next(createError(400, "No data was provided"));
-        }
-        const allProduct = await products.find();
-        const sku = await utils.generateSku(allProduct)
-
-        if (!sku) { return next(createError(400, "Failed to generate Store Keeping Unit(SKU)")) }
-
-        const currentDate = new Date();
-        const wasAdded = currentDate.toISOString();
-
-        const productInfo = {
-            name: req.body.name,
-            sku: sku,
-            description: req.body.description,
-            category: req.body.category,
-            costPrice: req.body.costPrice,
-            sellPrice: req.body.costPrice,
-            quantity: req.body.quantity,
-            reorderLevel: req.body.reorderLevel,
-            supplierId: req.body.supplierId,
-            unit: req.body.unit,
-            createdAt: wasAdded,
-            updatedAt: null
+        const { name, description, category, costPrice, sellPrice, quantity, reorderLevel, supplierId, unit } = req.body;
+        
+        const sku = await utils.generateSku(name, category, session);
+        if (!sku) {
+            throw new Error("Failed to generate Store Keeping Unit(SKU)");
         }
 
-        const newProduct = await products.create(productInfo);
-        if (!newProduct) {
-            return next(createError(400,'Product creation process failed.'))
-        }
+        const newProduct = await products.create([{
+            name,
+            sku,
+            description,
+            category,
+            costPrice,
+            sellPrice,
+            quantity,
+            reorderLevel,
+            supplierId,
+            unit
+        }], { session });
+        
+        await session.commitTransaction();
 
-        return res.status(200).json({
+        return res.status(201).json({
             status: 'success',
             message: 'Product created successfully',
-            result: newProduct
+            result: newProduct[0] 
         });
 
     } catch (error) {
-        
+        await session.abortTransaction();
+        next(error);
+    } finally {
+        session.endSession();
     }
-}
+};
 
 /******************************************
  * Update Product by ID
 *******************************************/
-const updateProductId = async (req,res,next) => {
+
+/* 
+#swagger.tags = [Product]
+#swagger.description = 'Update product by unique ID'
+#swagger.parameters['id'] = {
+    in: 'path',
+    description: 'ID of the product to be updated.',
+    required: true,
+    type: 'integer'
+}
+#swagger.responses[200]={
+    description:'Updated Successfully'
+    schema: {$ref: '#/definitions/Product'}
+}
+#swagger.responses[400] = {
+    description:'Update Failed',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
+const updateProductId = async (req, res, next) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
     try {
-        const productId = req.params.id;
+        const { id: productId } = req.params;
+
         if (!Types.ObjectId.isValid(productId)) {
-            return next(createError(400, 'Invalid product ID'));
+            throw createError(400, 'Invalid product ID.');
         }
 
-        // retrieve data
-        const data = await products.findById(productId);
+        const productToUpdate = await products.findById(productId).session(session);
 
-        if (!data) {
-            return next(createError(400,"Product not found"))
+        if (!productToUpdate) {
+            throw createError(404, 'Product not found.');
         }
-        const currentDate = new Date();
-        const date = currentDate.toISOString()
-
-        const productInfo = {
-            name: req.body.name,
-            sku: sku,
-            description: req.body.description,
-            category: req.body.category,
-            costPrice: req.body.costPrice,
-            sellPrice: req.body.costPrice,
-            quantity: req.body.quantity,
-            reorderLevel: req.body.reorderLevel,
-            supplierId: req.body.supplierId,
-            unit: req.body.unit,
-            updatedAt: date
+        
+        if (!req.body) {
+            throw createError(400, 'No data was provided for the update.');
         }
 
-        const filter= {_id: productId}
-        const updatedProduct = await products.replaceOne(filter, productInfo)
-        if (updatedProduct.modifiedCount === 0) {
-            return next(createError(400,"Updating process failed"))
+        const {
+            name,
+            sku,
+            description,
+            category,
+            costPrice,
+            sellPrice,
+            quantity: newQuantity, 
+            reorderLevel,
+            supplierId,
+            unit
+        } = req.body;
+        
+        if (supplierId && !Types.ObjectId.isValid(supplierId)) {
+            throw createError(400, 'Please provide a valid supplier ID.');
         }
+
+
+        const quantityChange = newQuantity - productToUpdate.quantity;
+        if (isNaN(quantityChange)) {
+            throw createError(400, 'New quantity must be a valid number.');
+        }
+
+        // Ensure the quantity doesn't become negative
+        if (productToUpdate.quantity + quantityChange < 0) {
+            throw createError(400, `Insufficient stock. Current: ${productToUpdate.quantity}, Change: ${quantityChange}`);
+        }
+        
+        // Find the supplier name for the audit log
+        let supplierName = 'N/A';
+        if (supplierId) {
+            const supplierInfo = await supplier.findById(supplierId).session(session);
+            if (supplierInfo) {
+                supplierName = supplierInfo.contactName;
+            }
+        }
+        
+        const updatedProduct = await products.findByIdAndUpdate(
+            productId,
+            {
+                name,
+                sku,
+                description,
+                category,
+                costPrice,
+                sellPrice,
+                quantity: productToUpdate.quantity + quantityChange,
+                reorderLevel,
+                supplierId,
+                unit,
+                updatedAt: new Date() 
+            },
+            { new: true, runValidators: true, session }
+        );
+
+        if (!updatedProduct) {
+            throw createError(400, 'Updating process failed.');
+        }
+
+        const auditAction = quantityChange > 0 ? 'Add Stock' : 'Adjustment';
+
+        const newAudit = {
+            productId: updatedProduct._id,
+            userId: req.user._id,
+            action: auditAction,
+            quantityChanged: quantityChange,
+            note: `${auditAction} for product ${updatedProduct._id} by ${req.user.fulName}. Supplied by: ${supplierName}`,
+        };
+
+        await invAudit.createInvAudit(newAudit, session);
+        
+        await session.commitTransaction();
 
         return res.status(200).json({
             status: 'success',
-            message: 'Product Successfully Updated',
+            message: 'Product successfully updated',
             result: updatedProduct
-        })
+        });
 
     } catch (error) {
-        next(error)
+        await session.abortTransaction();
+        next(error);
+    } finally {
+        session.endSession();
     }
-}
+};
+
 
 /************************************************
  * Delete Product By ID 
 *************************************************/
-const removeProductId = async (req,res,next) => {
+/* 
+#swagger.tags = [Product]
+#swagger.description = 'Remove product by unique ID'
+#swagger.parameters['id'] = {
+    in: 'path',
+    description: 'ID of the product to be Deleted.',
+    required: true,
+    type: 'integer'
+}
+#swagger.responses[200]={
+    description:'Product Successfully Delete'
+    schema: {$ref: '#/definitions/Product'}
+}
+#swagger.responses[400] = {
+    description:'Delete Failed',
+    schema: {$ref: '#/definitions/Error'}
+}
+*/
+const removeProductId = async (req, res, next) => {
     try {
         const productId = req.params.id;
         if (!Types.ObjectId.isValid(productId)) {
