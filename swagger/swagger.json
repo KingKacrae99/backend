@@ -5,10 +5,21 @@
     "description": "Inventory and Billing Web Services (Backend)",
     "version": "1.0.0"
   },
-  "host": "business-mgt-api.onrender.com",
+  "host": "localhost:3000",
   "basePath": "/",
-  "schemes": ["https"],
+  "schemes": ["http"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
   "paths": {
+    "/api": {
+      "get": {
+        "description": "API root endpoint",
+        "responses": {
+          "200": { "description": "API is running successfully" },
+          "default": { "description": "" }
+        }
+      }
+    },
     "/auth/google": {
       "get": {
         "description": "Authenticate user using Google OAuth",
@@ -62,9 +73,17 @@
       },
       "put": {
         "description": "Update a user's details",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/User" }
+          }
+        ],
         "responses": {
-          "200": { "description": "User updated successfully" },
+          "200": { "description": "User updated successfully", "schema": { "$ref": "#/definitions/User" } },
           "400": { "description": "Bad Request" },
           "401": { "description": "Unauthorized" }
         }
@@ -98,7 +117,7 @@
         "description": "Get a product by ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": { "description": "Product retrieved successfully" },
+          "200": { "description": "Product retrieved successfully", "schema": { "$ref": "#/definitions/Product" } },
           "401": { "description": "Unauthorized" }
         }
       }
@@ -106,6 +125,14 @@
     "/products/add": {
       "post": {
         "description": "Add a new product",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/Product" }
+          }
+        ],
         "responses": {
           "201": {
             "description": "Product created successfully",
@@ -119,9 +146,17 @@
     "/products/edit/{id}": {
       "put": {
         "description": "Edit a product by ID",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/Product" }
+          }
+        ],
         "responses": {
-          "200": { "description": "Product updated successfully" },
+          "200": { "description": "Product updated successfully", "schema": { "$ref": "#/definitions/Product" } },
           "400": { "description": "Bad Request" },
           "401": { "description": "Unauthorized" }
         }
@@ -157,7 +192,7 @@
         "description": "Get a category by ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": { "description": "Category retrieved successfully" },
+          "200": { "description": "Category retrieved successfully", "schema": { "$ref": "#/definitions/Category" } },
           "default": { "description": "" }
         }
       }
@@ -165,6 +200,14 @@
     "/category/add": {
       "post": {
         "description": "Add a new category",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/Category" }
+          }
+        ],
         "responses": {
           "201": {
             "description": "Category created successfully",
@@ -178,9 +221,17 @@
     "/category/update/{id}": {
       "put": {
         "description": "Update a category by ID",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/Category" }
+          }
+        ],
         "responses": {
-          "200": { "description": "Category updated successfully" },
+          "200": { "description": "Category updated successfully", "schema": { "$ref": "#/definitions/Category" } },
           "400": { "description": "Bad Request" },
           "401": { "description": "Unauthorized" }
         }
@@ -216,7 +267,7 @@
         "description": "Get an order by ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": { "description": "Order retrieved successfully" },
+          "200": { "description": "Order retrieved successfully", "schema": { "$ref": "#/definitions/Order" } },
           "401": { "description": "Unauthorized" }
         }
       }
@@ -224,9 +275,17 @@
     "/orders/update/{id}": {
       "put": {
         "description": "Update an order by ID",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/Order" }
+          }
+        ],
         "responses": {
-          "200": { "description": "Order updated successfully" },
+          "200": { "description": "Order updated successfully", "schema": { "$ref": "#/definitions/Order" } },
           "400": { "description": "Bad Request" },
           "401": { "description": "Unauthorized" }
         }
@@ -235,6 +294,14 @@
     "/orders/add": {
       "post": {
         "description": "Add a new order",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/Order" }
+          }
+        ],
         "responses": {
           "201": {
             "description": "Order created successfully",
@@ -258,6 +325,14 @@
     "/suppliers/add": {
       "post": {
         "description": "Add a new supplier",
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/Supplier" }
+          }
+        ],
         "responses": {
           "201": {
             "description": "Supplier created successfully",
@@ -271,9 +346,17 @@
     "/suppliers/update/{id}": {
       "put": {
         "description": "Update a supplier by ID",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/Supplier" }
+          }
+        ],
         "responses": {
-          "200": { "description": "Supplier updated successfully" },
+          "200": { "description": "Supplier updated successfully", "schema": { "$ref": "#/definitions/Supplier" } },
           "400": { "description": "Bad Request" },
           "401": { "description": "Unauthorized" }
         }
@@ -284,7 +367,7 @@
         "description": "Get a supplier by ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": { "description": "Supplier retrieved successfully" },
+          "200": { "description": "Supplier retrieved successfully", "schema": { "$ref": "#/definitions/Supplier" } },
           "401": { "description": "Unauthorized" }
         }
       }
@@ -303,7 +386,7 @@
       "get": {
         "description": "Get all audit logs",
         "responses": {
-          "200": { "description": "Audit logs retrieved successfully" },
+          "200": { "description": "Audit logs retrieved successfully", "schema": { "type": "array", "items": { "$ref": "#/definitions/Audit" } } },
           "401": { "description": "Unauthorized" }
         }
       }
@@ -313,7 +396,7 @@
         "description": "Get an audit log by ID",
         "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": { "description": "Audit log retrieved successfully" },
+          "200": { "description": "Audit log retrieved successfully", "schema": { "$ref": "#/definitions/Audit" } },
           "401": { "description": "Unauthorized" }
         }
       }
@@ -321,9 +404,17 @@
     "/audits/update/{id}": {
       "put": {
         "description": "Update an audit record by ID",
-        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "parameters": [
+          { "name": "id", "in": "path", "required": true, "type": "string" },
+          {
+            "name": "body",
+            "in": "body",
+            "required": true,
+            "schema": { "$ref": "#/definitions/Audit" }
+          }
+        ],
         "responses": {
-          "200": { "description": "Audit updated successfully" },
+          "200": { "description": "Audit updated successfully", "schema": { "$ref": "#/definitions/Audit" } },
           "401": { "description": "Unauthorized" }
         }
       }
@@ -384,7 +475,8 @@
         "unit": { "type": "string", "example": "Packs" },
         "createdAt": { "type": "string", "example": "2025-10-16T00:00:00.000Z" },
         "updatedAt": { "type": "string", "example": "2025-10-16T00:00:00.000Z" }
-      }
+      },
+      "required": ["name", "sku"]
     },
     "OrderItem": {
       "type": "object",
@@ -394,7 +486,8 @@
         "quantity": { "type": "number", "example": 5 },
         "price": { "type": "number", "example": 150 },
         "subtotal": { "type": "number", "example": 750 }
-      }
+      },
+      "required": ["productId", "quantity", "price"]
     },
     "Order": {
       "type": "object",
@@ -409,13 +502,25 @@
         "status": { "type": "string", "example": "Pending" },
         "createdAt": { "type": "string", "example": "2025-10-16T00:00:00.000Z" },
         "updatedAt": { "type": "string", "example": "2025-10-16T00:00:00.000Z" }
-      }
+      },
+      "required": ["items", "total"]
     },
     "Category": {
       "type": "object",
       "properties": {
         "name": { "type": "string", "example": "Pharmaceuticals" }
-      }
+      },
+      "required": ["name"]
+    },
+    "Audit": {
+      "type": "object",
+      "properties": {
+        "action": { "type": "string", "example": "CREATE_PRODUCT" },
+        "userId": { "type": "string", "example": "60d5f4832b8b4f1e9c1a9999" },
+        "details": { "type": "string", "example": "Created product PRC-001" },
+        "createdAt": { "type": "string", "example": "2025-10-16T00:00:00.000Z" }
+      },
+      "required": ["action", "userId"]
     }
   }
 }
