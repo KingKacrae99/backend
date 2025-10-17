@@ -20,7 +20,7 @@ const UserRules = [
 
     body('role')
         .optional()
-        .isIn(['admin', 'editor', 'user']).withMessage('Invalid user role.'),
+        .isIn(['Admin', 'Manager', 'Staff']).withMessage('Invalid user role.'),
 
     // 5. Google ID and picture are typically not updated manually.
     // We can omit validation or add checks for their existence.
