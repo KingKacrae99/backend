@@ -19,7 +19,7 @@ const isAdmin = (req, res, next) => {
         }
         return res.status(401).json("You're not authorized to access this route.")
     }
-    return res.status(401).json("Please login.")
+    return res.status(401).json("Unathorized access denied!.")
 }
 
 /*********************************************

@@ -19,7 +19,7 @@ router.use('/products', productRoute)
 router.use('/category', categoryRoute)
 router.use('/orders',orderRoute)
 router.use('/suppliers', supplierRoute)
-router.use('/inv',invRoute)
+router.use('/audits',invRoute)
 
 module.exports = router;
 

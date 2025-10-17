@@ -2,7 +2,7 @@
   "swagger": "2.0",
   "info": {
     "title": "Business Management API",
-    "description": "A professional API for managing inventory, suppliers, products, categories, and orders within a business management system. It supports billing, auditing, and user roles (Admin, Manager, Staff, Client).",
+    "description": "API for managing inventory, suppliers, products, categories, orders and inventory audits. Implements role-aware endpoints and audit logging. Authentication via Google OAuth2 (implicit flow) or bearer JWT for service-to-service calls.",
     "version": "1.0.0",
     "contact": {
       "name": "API Support",
@@ -11,285 +11,1486 @@
   },
   "host": "business-mgt-api.onrender.com",
   "basePath": "/",
-  "schemes": ["https"],
-  "consumes": ["application/json"],
-  "produces": ["application/json"],
-
+  "schemes": [
+    "https"
+  ],
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "google_oauth2": {
+      "type": "oauth2",
+      "flow": "implicit",
+      "authorizationUrl": "https://accounts.google.com/o/oauth2/v2/auth",
+      "scopes": {
+        "openid": "Access to user identity",
+        "profile": "Access to basic profile info",
+        "email": "Access to user email address"
+      }
+    },
+    "BearerAuth": {
+      "type": "apiKey",
+      "name": "Authorization",
+      "in": "header",
+      "description": "Provide JWT as: `Bearer {token}`"
+    }
+  },
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "Authentication endpoints (Google OAuth)"
+    },
+    {
+      "name": "Users",
+      "description": "User management"
+    },
+    {
+      "name": "Products",
+      "description": "Product CRUD and listing"
+    },
+    {
+      "name": "Categories",
+      "description": "Product category CRUD"
+    },
+    {
+      "name": "Suppliers",
+      "description": "Supplier CRUD"
+    },
+    {
+      "name": "Orders",
+      "description": "Order creation and management"
+    },
+    {
+      "name": "Audits",
+      "description": "Inventory audit logs"
+    }
+  ],
   "paths": {
-      "/": {
+    "/": {
       "get": {
-        "description": "Root endpoint",
-        "responses": {
-          "200": { "description": "API is running" }
-        }
-      }
-    },
-    "/categories": {
-      "get": {
-        "summary": "Get all categories",
-        "tags": ["Categories"],
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Root / health check",
+        "description": "Simple health check for the API.",
         "responses": {
           "200": {
-            "description": "List of all product categories",
+            "description": "API is running",
             "schema": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/Category" }
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string"
+                },
+                "time": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "status": "ok",
+                "time": "2025-10-17T00:00:00.000Z"
+              }
             }
           }
         }
-      },
-      "post": {
-        "summary": "Create a new category",
-        "tags": ["Categories"],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": { "$ref": "#/definitions/Category" }
-          }
+      }
+    },
+    "/auth/google": {
+      "get": {
+        "tags": [
+          "Auth"
         ],
+        "summary": "Redirect to Google OAuth",
+        "description": "Start Google OAuth2 implicit flow. Visit this endpoint in the browser to authenticate via Google. The redirect URL configured in Google should point to your client application.",
         "responses": {
-          "201": { "description": "Category created successfully" },
-          "400": { "description": "Invalid input" }
+          "302": {
+            "description": "Redirect to Google authorization endpoint"
+          }
         }
       }
     },
-
-    "/products": {
-      "get": {
-        "summary": "Get all products",
-        "tags": ["Products"],
-        "responses": {
-          "200": {
-            "description": "List of all products",
-            "schema": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/Product" }
-            }
-          }
-        }
-      },
+    "/auth/logout": {
       "post": {
-        "summary": "Create a new product",
-        "tags": ["Products"],
-        "parameters": [
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Logout current user",
+        "description": "Invalidate current session / JWT on server side (if applicable).",
+        "security": [
           {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": { "$ref": "#/definitions/Product" }
+            "BearerAuth": []
           }
         ],
         "responses": {
-          "201": { "description": "Product created successfully" },
-          "400": { "description": "Invalid input data" }
-        }
-      }
-    },
-
-    "/orders": {
-      "get": {
-        "summary": "Retrieve all orders",
-        "tags": ["Orders"],
-        "responses": {
           "200": {
-            "description": "List of orders",
+            "description": "User logged out successfully",
             "schema": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/Order" }
+              "type": "object",
+              "properties": {
+                "message": {
+                  "type": "string"
+                }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "message": "Logged out"
+              }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
           }
-        }
-      },
-      "post": {
-        "summary": "Create a new order",
-        "tags": ["Orders"],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": { "$ref": "#/definitions/Order" }
-          }
-        ],
-        "responses": {
-          "201": { "description": "Order created successfully" },
-          "400": { "description": "Invalid input" }
-        }
-      }
-    },
-
-    "/suppliers": {
-      "get": {
-        "summary": "Get all suppliers",
-        "tags": ["Suppliers"],
-        "responses": {
-          "200": {
-            "description": "List of suppliers",
-            "schema": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/Supplier" }
-            }
-          }
-        }
-      },
-      "post": {
-        "summary": "Create a new supplier",
-        "tags": ["Suppliers"],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": { "$ref": "#/definitions/Supplier" }
-          }
-        ],
-        "responses": {
-          "201": { "description": "Supplier created successfully" },
-          "400": { "description": "Invalid data" }
-        }
-      }
-    },
-
-    "/audits": {
-      "get": {
-        "summary": "Get all inventory audit logs",
-        "tags": ["Inventory Audit"],
-        "responses": {
-          "200": {
-            "description": "List of inventory audit records",
-            "schema": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/InventoryAudit" }
-            }
-          }
-        }
-      },
-      "post": {
-        "summary": "Record an inventory audit action",
-        "tags": ["Inventory Audit"],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": { "$ref": "#/definitions/InventoryAudit" }
-          }
-        ],
-        "responses": {
-          "201": { "description": "Audit record created" }
         }
       }
     },
 
     "/users": {
       "get": {
-        "summary": "Get all users",
-        "tags": ["Users"],
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get users (paginated)",
+        "description": "Returns a paginated list of users. Requires authentication and appropriate role (Admin/Manager).",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "type": "integer",
+            "required": false,
+            "description": "Page number",
+            "default": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "integer",
+            "required": false,
+            "description": "Page size",
+            "default": 20
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "type": "string",
+            "required": false,
+            "description": "Search term (name or email)"
+          }
+        ],
         "responses": {
           "200": {
             "description": "List of users",
             "schema": {
-              "type": "array",
-              "items": { "$ref": "#/definitions/User" }
+              "type": "object",
+              "properties": {
+                "docs": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/User"
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                },
+                "page": {
+                  "type": "integer"
+                },
+                "limit": {
+                  "type": "integer"
+                }
+              }
+            },
+            "examples": {
+              "application/json": {
+                "docs": [
+                  {
+                    "googleId": "101",
+                    "fullName": "John Doe",
+                    "email": "john@example.com",
+                    "role": "Manager"
+                  }
+                ],
+                "total": 1,
+                "page": 1,
+                "limit": 20
+              }
             }
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+
+    "/categories": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Get all categories",
+        "responses": {
+          "200": {
+            "description": "List of categories",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Category"
+              }
+            },
+            "examples": {
+              "application/json": [
+                {
+                  "_id": "64a1b2c3",
+                  "name": "Pharmaceuticals"
+                }
+              ]
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Create a new category",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CategoryCreate"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Category created",
+            "schema": {
+              "$ref": "#/definitions/Category"
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+
+    "/categories/{id}": {
+      "get": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Get category by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category returned",
+            "schema": {
+              "$ref": "#/definitions/Category"
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Update category by ID",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/CategoryCreate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Category updated",
+            "schema": {
+              "$ref": "#/definitions/Category"
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Categories"
+        ],
+        "summary": "Delete category",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+
+    "/products": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "List products (paginated)",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "type": "integer",
+            "required": false,
+            "default": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "integer",
+            "required": false,
+            "default": 20
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "type": "string",
+            "required": false,
+            "description": "Search by name or sku"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "type": "string",
+            "required": false,
+            "description": "Filter by category id"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "type": "string",
+            "required": false,
+            "description": "Sort string, e.g. 'sellPrice:asc'"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Products list",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "docs": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Product"
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                },
+                "page": {
+                  "type": "integer"
+                },
+                "limit": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Create product",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProductCreate"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Product created",
+            "schema": {
+              "$ref": "#/definitions/Product"
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+
+    "/products/{id}": {
+      "get": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Get product by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product returned",
+            "schema": {
+              "$ref": "#/definitions/Product"
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Update product",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/ProductCreate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Product updated",
+            "schema": {
+              "$ref": "#/definitions/Product"
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Products"
+        ],
+        "summary": "Delete product",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      }
+    },
+
+    "/suppliers": {
+      "get": {
+        "tags": [
+          "Suppliers"
+        ],
+        "summary": "List suppliers",
+        "responses": {
+          "200": {
+            "description": "Suppliers list",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/Supplier"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Suppliers"
+        ],
+        "summary": "Create supplier",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupplierCreate"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Supplier created",
+            "schema": {
+              "$ref": "#/definitions/Supplier"
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+
+    "/suppliers/{id}": {
+      "get": {
+        "tags": [
+          "Suppliers"
+        ],
+        "summary": "Get supplier",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Supplier returned",
+            "schema": {
+              "$ref": "#/definitions/Supplier"
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Suppliers"
+        ],
+        "summary": "Update supplier",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/SupplierCreate"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Supplier updated",
+            "schema": {
+              "$ref": "#/definitions/Supplier"
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Suppliers"
+        ],
+        "summary": "Delete supplier",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+
+    "/orders": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "List orders (paginated)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "type": "integer"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Orders list",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "docs": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Order"
+                  }
+                },
+                "total": {
+                  "type": "integer"
+                },
+                "page": {
+                  "type": "integer"
+                },
+                "limit": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Create an order",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/OrderCreate"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Order created",
+            "schema": {
+              "$ref": "#/definitions/Order"
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+
+    "/orders/{id}": {
+      "get": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Get order by ID",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order returned",
+            "schema": {
+              "$ref": "#/definitions/Order"
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Update order status",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string",
+                  "enum": [
+                    "Pending",
+                    "Paid"
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Order updated",
+            "schema": {
+              "$ref": "#/definitions/Order"
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Orders"
+        ],
+        "summary": "Delete order",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
+          }
+        }
+      }
+    },
+
+    "/audits": {
+      "get": {
+        "tags": [
+          "Audits"
+        ],
+        "summary": "Get inventory audit logs",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit list",
+            "schema": {
+              "type": "array",
+              "items": {
+                "$ref": "#/definitions/InventoryAudit"
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Audits"
+        ],
+        "summary": "Create inventory audit record",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/InventoryAuditCreate"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Audit recorded",
+            "schema": {
+              "$ref": "#/definitions/InventoryAudit"
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          }
+        }
+      }
+    },
+
+    "/audits/{id}": {
+      "get": {
+        "tags": [
+          "Audits"
+        ],
+        "summary": "Get audit record",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit returned",
+            "schema": {
+              "$ref": "#/definitions/InventoryAudit"
+            }
+          },
+          "404": {
+            "description": "Not found"
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Audits"
+        ],
+        "summary": "Update audit (mark read / add note)",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "isRead": {
+                  "type": "boolean"
+                },
+                "note": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Audit updated",
+            "schema": {
+              "$ref": "#/definitions/InventoryAudit"
+            }
+          },
+          "400": {
+            "description": "Bad request"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Audits"
+        ],
+        "summary": "Delete audit record",
+        "security": [
+          {
+            "BearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Deleted"
+          },
+          "401": {
+            "description": "Unauthorized"
           }
         }
       }
     }
   },
-
   "definitions": {
     "Category": {
       "type": "object",
-      "required": ["name"],
       "properties": {
-        "name": { "type": "string", "example": "Electronics" }
-      }
-    },
-
-    "Product": {
-      "type": "object",
-      "required": ["name", "sku", "category", "costPrice", "sellPrice"],
-      "properties": {
-        "name": { "type": "string", "example": "Wireless Mouse" },
-        "sku": { "type": "string", "example": "WMX-001" },
-        "description": { "type": "string", "example": "Ergonomic wireless mouse" },
-        "category": { "type": "string", "example": "671cbe892d3f48a60a1e4c9b" },
-        "costPrice": { "type": "number", "example": 20.5 },
-        "sellPrice": { "type": "number", "example": 35.99 },
-        "quantity": { "type": "number", "example": 50 },
-        "reorderLevel": { "type": "number", "example": 5 },
-        "supplierId": { "type": "string", "example": "671cbe1b2d3f48a60a1e4c97" },
-        "unit": { "type": "string", "enum": ["Pieces", "Packs", "Dozen", "Box"], "example": "Pieces" }
-      }
-    },
-
-    "Supplier": {
-      "type": "object",
-      "required": ["name"],
-      "properties": {
-        "name": { "type": "string", "example": "ABC Supplies Ltd" },
-        "email": { "type": "string", "example": "info@abcsupplies.com" },
-        "phone": { "type": "string", "example": "+2348100000000" },
-        "address": { "type": "string", "example": "12, Market Road, Lagos" },
-        "productsSupplied": {
-          "type": "array",
-          "items": { "type": "string" },
-          "example": ["671cbe892d3f48a60a1e4c9b"]
+        "_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "example": "Pharmaceuticals"
         }
       }
     },
-
+    "CategoryCreate": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "example": "Pharmaceuticals"
+        }
+      }
+    },
+    "Product": {
+      "type": "object",
+      "properties": {
+        "_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "example": "Paracetamol"
+        },
+        "sku": {
+          "type": "string",
+          "example": "PRC-001"
+        },
+        "description": {
+          "type": "string",
+          "example": "Pain relief tablet"
+        },
+        "category": {
+          "type": "string",
+          "example": "60d5f4832b8b4f1e9c1a5678"
+        },
+        "costPrice": {
+          "type": "number",
+          "example": 100
+        },
+        "sellPrice": {
+          "type": "number",
+          "example": 150
+        },
+        "quantity": {
+          "type": "number",
+          "example": 200
+        },
+        "reorderLevel": {
+          "type": "number",
+          "example": 10
+        },
+        "supplierId": {
+          "type": "string",
+          "example": "60d5f4832b8b4f1e9c1a1234"
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "Pieces",
+            "Packs",
+            "Dozen",
+            "Box"
+          ],
+          "example": "Packs"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "ProductCreate": {
+      "type": "object",
+      "required": [
+        "name",
+        "sku",
+        "category",
+        "costPrice",
+        "sellPrice"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "category": {
+          "type": "string"
+        },
+        "costPrice": {
+          "type": "number"
+        },
+        "sellPrice": {
+          "type": "number"
+        },
+        "quantity": {
+          "type": "number"
+        },
+        "reorderLevel": {
+          "type": "number"
+        },
+        "supplierId": {
+          "type": "string"
+        },
+        "unit": {
+          "type": "string",
+          "enum": [
+            "Pieces",
+            "Packs",
+            "Dozen",
+            "Box"
+          ]
+        }
+      }
+    },
+    "Supplier": {
+      "type": "object",
+      "properties": {
+        "_id": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string",
+          "example": "MedTech Supplies Ltd."
+        },
+        "email": {
+          "type": "string",
+          "example": "contact@medtech.com"
+        },
+        "phone": {
+          "type": "string",
+          "example": "+2348012345678"
+        },
+        "address": {
+          "type": "string",
+          "example": "12 Main Street, Lagos, Nigeria"
+        },
+        "productsSupplied": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "SupplierCreate": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        },
+        "address": {
+          "type": "string"
+        },
+        "productsSupplied": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "OrderItem": {
+      "type": "object",
+      "properties": {
+        "productId": {
+          "type": "string",
+          "example": "60d5f4832b8b4f1e9c1a5678"
+        },
+        "name": {
+          "type": "string",
+          "example": "Paracetamol"
+        },
+        "quantity": {
+          "type": "number",
+          "example": 5
+        },
+        "price": {
+          "type": "number",
+          "example": 150
+        },
+        "subtotal": {
+          "type": "number",
+          "example": 750
+        }
+      }
+    },
     "Order": {
       "type": "object",
-      "required": ["items", "total"],
+      "properties": {
+        "_id": {
+          "type": "string"
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/OrderItem"
+          }
+        },
+        "total": {
+          "type": "number",
+          "example": 750
+        },
+        "tax": {
+          "type": "number",
+          "example": 0
+        },
+        "discount": {
+          "type": "number",
+          "example": 0
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "Pending",
+            "Paid"
+          ],
+          "example": "Pending"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      }
+    },
+    "OrderCreate": {
+      "type": "object",
+      "required": [
+        "items",
+        "total"
+      ],
       "properties": {
         "items": {
           "type": "array",
           "items": {
-            "type": "object",
-            "properties": {
-              "productId": { "type": "string", "example": "671cbe892d3f48a60a1e4c9b" },
-              "name": { "type": "string", "example": "Wireless Mouse" },
-              "quantity": { "type": "number", "example": 2 },
-              "price": { "type": "number", "example": 35.99 },
-              "subtotal": { "type": "number", "example": 71.98 }
-            }
+            "$ref": "#/definitions/OrderItem"
           }
         },
-        "total": { "type": "number", "example": 71.98 },
-        "tax": { "type": "number", "example": 5 },
-        "discount": { "type": "number", "example": 0 },
-        "status": { "type": "string", "enum": ["Pending", "Paid"], "example": "Pending" }
+        "total": {
+          "type": "number"
+        },
+        "tax": {
+          "type": "number"
+        },
+        "discount": {
+          "type": "number"
+        }
       }
     },
-
     "InventoryAudit": {
       "type": "object",
-      "required": ["productId", "userId", "action", "quantityChanged"],
       "properties": {
-        "productId": { "type": "string", "example": "671cbe892d3f48a60a1e4c9b" },
-        "userId": { "type": "string", "example": "671cbfcd2d3f48a60a1e4d2a" },
-        "action": { "type": "string", "enum": ["Add Stock", "Remove Stock", "Sale", "Adjustment"], "example": "Add Stock" },
-        "quantityChanged": { "type": "number", "example": 10 },
-        "note": { "type": "string", "example": "Restocked 10 units" },
-        "isRead": { "type": "boolean", "example": false }
+        "_id": {
+          "type": "string"
+        },
+        "productId": {
+          "type": "string",
+          "example": "60d5f4832b8b4f1e9c1a5678"
+        },
+        "userId": {
+          "type": "string",
+          "example": "60d5f4832b8b4f1e9c1a9999"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "Add Stock",
+            "Remove Stock",
+            "Sale",
+            "Adjustment"
+          ],
+          "example": "Add Stock"
+        },
+        "quantityChanged": {
+          "type": "number",
+          "example": 10
+        },
+        "isRead": {
+          "type": "boolean",
+          "example": false
+        },
+        "note": {
+          "type": "string",
+          "example": "Restocked 10 units"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
       }
     },
-
+    "InventoryAuditCreate": {
+      "type": "object",
+      "required": [
+        "productId",
+        "userId",
+        "action",
+        "quantityChanged"
+      ],
+      "properties": {
+        "productId": {
+          "type": "string"
+        },
+        "userId": {
+          "type": "string"
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "Add Stock",
+            "Remove Stock",
+            "Sale",
+            "Adjustment"
+          ]
+        },
+        "quantityChanged": {
+          "type": "number"
+        },
+        "note": {
+          "type": "string"
+        }
+      }
+    },
     "User": {
       "type": "object",
-      "required": ["googleId", "fullName", "email", "picture"],
       "properties": {
-        "googleId": { "type": "string", "example": "1012938479234" },
-        "fullName": { "type": "string", "example": "John Doe" },
-        "email": { "type": "string", "example": "john.doe@gmail.com" },
-        "picture": { "type": "string", "example": "https://lh3.googleusercontent.com/photo.jpg" },
-        "locale": { "type": "string", "example": "en" },
-        "role": { "type": "string", "enum": ["Admin", "Manager", "Staff", "Client"], "example": "Manager" },
-        "joinedAt": { "type": "string", "format": "date-time" }
+        "googleId": {
+          "type": "string",
+          "example": "1234567890abcdef"
+        },
+        "fullName": {
+          "type": "string",
+          "example": "John Doe"
+        },
+        "email": {
+          "type": "string",
+          "example": "johndoe@example.com"
+        },
+        "picture": {
+          "type": "string",
+          "example": "https://example.com/avatar.jpg"
+        },
+        "local": {
+          "type": "string",
+          "example": "en-US"
+        },
+        "locale": {
+          "type": "string",
+          "example": "US"
+        },
+        "role": {
+          "type": "string",
+          "enum": [
+            "Admin",
+            "Manager",
+            "Staff",
+            "Client"
+          ],
+          "example": "Client"
+        },
+        "joinedAt": {
+          "type": "string",
+          "format": "date-time",
+          "example": "2025-10-16T00:00:00.000Z"
+        }
       }
     }
   }

@@ -3,12 +3,13 @@ const orderController = require('../controllers/order')
 const wrapper = require('../middleware/wrapper')
 const { validateCreateOrder, validateUpdateOrder } = require('../middleware/orderValidation');
 const { utils } = require('../utils');
+const privilege = require("../middleware/auth")
 
 
-router.get('/', wrapper(orderController.getOrders))
-router.get('/:id', wrapper(orderController.getOrderById))
-router.put('/update/:id',validateUpdateOrder, utils.handleValidationErrors, wrapper(orderController.updateOrder))
-router.post('/add',validateCreateOrder, utils.handleValidationErrors, wrapper(orderController.createOrder))
-router.delete('/delete/:id', wrapper(orderController.removeOrderById))
+router.get('/',privilege.isAuthenticated,privilege.isStaff, wrapper(orderController.getOrders))
+router.get('/:id',privilege.isAuthenticated, privilege.isStaff, wrapper(orderController.getOrderById))
+router.put('/update/:id',privilege.isAuthenticated, privilege.isStaff,validateUpdateOrder, utils.handleValidationErrors, wrapper(orderController.updateOrder))
+router.post('/add', privilege.isAuthenticated ,privilege.isStaff, validateCreateOrder, utils.handleValidationErrors, wrapper(orderController.createOrder))
+router.delete('/delete/:id', privilege.isAuthenticated, privilege.isAdmin, wrapper(orderController.removeOrderById))
 
 module.exports = router;
