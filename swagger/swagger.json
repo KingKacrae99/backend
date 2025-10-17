@@ -1,1496 +1,420 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "Business Management API",
-    "description": "API for managing inventory, suppliers, products, categories, orders and inventory audits. Implements role-aware endpoints and audit logging. Authentication via Google OAuth2 (implicit flow) or bearer JWT for service-to-service calls.",
-    "version": "1.0.0",
-    "contact": {
-      "name": "API Support",
-      "email": "support@businessmgtapi.com"
-    }
+    "title": "Business Mgt API",
+    "description": "Inventory and Billing Web Services (Backend)",
+    "version": "1.0.0"
   },
   "host": "business-mgt-api.onrender.com",
   "basePath": "/",
-  "schemes": [
-    "https"
-  ],
-  "consumes": [
-    "application/json"
-  ],
-  "produces": [
-    "application/json"
-  ],
-  "securityDefinitions": {
-    "google_oauth2": {
-      "type": "oauth2",
-      "flow": "implicit",
-      "authorizationUrl": "https://accounts.google.com/o/oauth2/v2/auth",
-      "scopes": {
-        "openid": "Access to user identity",
-        "profile": "Access to basic profile info",
-        "email": "Access to user email address"
-      }
-    },
-    "BearerAuth": {
-      "type": "apiKey",
-      "name": "Authorization",
-      "in": "header",
-      "description": "Provide JWT as: `Bearer {token}`"
-    }
-  },
-  "tags": [
-    {
-      "name": "Auth",
-      "description": "Authentication endpoints (Google OAuth)"
-    },
-    {
-      "name": "Users",
-      "description": "User management"
-    },
-    {
-      "name": "Products",
-      "description": "Product CRUD and listing"
-    },
-    {
-      "name": "Categories",
-      "description": "Product category CRUD"
-    },
-    {
-      "name": "Suppliers",
-      "description": "Supplier CRUD"
-    },
-    {
-      "name": "Orders",
-      "description": "Order creation and management"
-    },
-    {
-      "name": "Audits",
-      "description": "Inventory audit logs"
-    }
-  ],
+  "schemes": ["https"],
   "paths": {
-    "/": {
+    "/auth/google": {
       "get": {
-        "tags": [
-          "Auth"
-        ],
-        "summary": "Root / health check",
-        "description": "Simple health check for the API.",
+        "description": "Authenticate user using Google OAuth",
         "responses": {
-          "200": {
-            "description": "API is running",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "status": {
-                  "type": "string"
-                },
-                "time": {
-                  "type": "string",
-                  "format": "date-time"
-                }
-              }
-            },
-            "examples": {
-              "application/json": {
-                "status": "ok",
-                "time": "2025-10-17T00:00:00.000Z"
-              }
-            }
-          }
+          "200": { "description": "Redirect to Google login page" },
+          "default": { "description": "" }
         }
       }
     },
-    "/auth/google": {
+    "/auth/google/callback": {
       "get": {
-        "tags": [
-          "Auth"
-        ],
-        "summary": "Redirect to Google OAuth",
-        "description": "Start Google OAuth2 implicit flow. Visit this endpoint in the browser to authenticate via Google. The redirect URL configured in Google should point to your client application.",
+        "description": "Handle Google OAuth callback",
         "responses": {
-          "302": {
-            "description": "Redirect to Google authorization endpoint"
-          }
+          "200": { "description": "Authentication successful" },
+          "default": { "description": "" }
         }
       }
     },
     "/auth/logout": {
-      "post": {
-        "tags": [
-          "Auth"
-        ],
-        "summary": "Logout current user",
-        "description": "Invalidate current session / JWT on server side (if applicable).",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
+      "get": {
+        "description": "Logout the currently authenticated user",
         "responses": {
-          "200": {
-            "description": "User logged out successfully",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "message": {
-                  "type": "string"
-                }
-              }
-            },
-            "examples": {
-              "application/json": {
-                "message": "Logged out"
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
+          "200": { "description": "Logged out successfully" },
+          "401": { "description": "Unauthorized" }
         }
       }
     },
-
-    "/users": {
+    "/user/": {
       "get": {
-        "tags": [
-          "Users"
-        ],
-        "summary": "Get users (paginated)",
-        "description": "Returns a paginated list of users. Requires authentication and appropriate role (Admin/Manager).",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "type": "integer",
-            "required": false,
-            "description": "Page number",
-            "default": 1
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "type": "integer",
-            "required": false,
-            "description": "Page size",
-            "default": 20
-          },
-          {
-            "name": "q",
-            "in": "query",
-            "type": "string",
-            "required": false,
-            "description": "Search term (name or email)"
-          }
-        ],
+        "description": "Get all registered users",
         "responses": {
           "200": {
-            "description": "List of users",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "docs": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/User"
-                  }
-                },
-                "total": {
-                  "type": "integer"
-                },
-                "page": {
-                  "type": "integer"
-                },
-                "limit": {
-                  "type": "integer"
-                }
-              }
-            },
-            "examples": {
-              "application/json": {
-                "docs": [
-                  {
-                    "googleId": "101",
-                    "fullName": "John Doe",
-                    "email": "john@example.com",
-                    "role": "Manager"
-                  }
-                ],
-                "total": 1,
-                "page": 1,
-                "limit": 20
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      }
-    },
-
-    "/categories": {
-      "get": {
-        "tags": [
-          "Categories"
-        ],
-        "summary": "Get all categories",
-        "responses": {
-          "200": {
-            "description": "List of categories",
+            "description": "List of all users",
             "schema": {
               "type": "array",
-              "items": {
-                "$ref": "#/definitions/Category"
-              }
-            },
-            "examples": {
-              "application/json": [
-                {
-                  "_id": "64a1b2c3",
-                  "name": "Pharmaceuticals"
-                }
-              ]
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Categories"
-        ],
-        "summary": "Create a new category",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/CategoryCreate"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Category created",
-            "schema": {
-              "$ref": "#/definitions/Category"
+              "items": { "$ref": "#/definitions/User" }
             }
           },
-          "400": {
-            "description": "Invalid input"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
+          "401": { "description": "Unauthorized" }
         }
       }
     },
-
-    "/categories/{id}": {
+    "/user/{id}": {
       "get": {
-        "tags": [
-          "Categories"
-        ],
-        "summary": "Get category by ID",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
+        "description": "Get user details by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": {
-            "description": "Category returned",
-            "schema": {
-              "$ref": "#/definitions/Category"
-            }
-          },
-          "404": {
-            "description": "Not found"
-          }
+          "200": { "description": "User details retrieved successfully" },
+          "401": { "description": "Unauthorized" }
         }
       },
       "put": {
-        "tags": [
-          "Categories"
-        ],
-        "summary": "Update category by ID",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/CategoryCreate"
-            }
-          }
-        ],
+        "description": "Update a user's details",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": {
-            "description": "Category updated",
-            "schema": {
-              "$ref": "#/definitions/Category"
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
+          "200": { "description": "User updated successfully" },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
         }
       },
       "delete": {
-        "tags": [
-          "Categories"
-        ],
-        "summary": "Delete category",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
+        "description": "Delete a user by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "204": {
-            "description": "Deleted"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Not found"
-          }
+          "200": { "description": "User deleted successfully" },
+          "401": { "description": "Unauthorized" }
         }
       }
     },
-
-    "/products": {
+    "/products/": {
       "get": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "List products (paginated)",
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "type": "integer",
-            "required": false,
-            "default": 1
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "type": "integer",
-            "required": false,
-            "default": 20
-          },
-          {
-            "name": "q",
-            "in": "query",
-            "type": "string",
-            "required": false,
-            "description": "Search by name or sku"
-          },
-          {
-            "name": "category",
-            "in": "query",
-            "type": "string",
-            "required": false,
-            "description": "Filter by category id"
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "type": "string",
-            "required": false,
-            "description": "Sort string, e.g. 'sellPrice:asc'"
-          }
-        ],
+        "description": "Fetch all products",
         "responses": {
           "200": {
-            "description": "Products list",
+            "description": "List of products retrieved successfully",
             "schema": {
-              "type": "object",
-              "properties": {
-                "docs": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/Product"
-                  }
-                },
-                "total": {
-                  "type": "integer"
-                },
-                "page": {
-                  "type": "integer"
-                },
-                "limit": {
-                  "type": "integer"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "Create product",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/ProductCreate"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Product created",
-            "schema": {
-              "$ref": "#/definitions/Product"
+              "type": "array",
+              "items": { "$ref": "#/definitions/Product" }
             }
           },
-          "400": {
-            "description": "Invalid input"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
+          "401": { "description": "Unauthorized" }
         }
       }
     },
-
     "/products/{id}": {
       "get": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "Get product by ID",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
+        "description": "Get a product by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": {
-            "description": "Product returned",
-            "schema": {
-              "$ref": "#/definitions/Product"
-            }
-          },
-          "404": {
-            "description": "Not found"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "Update product",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/ProductCreate"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Product updated",
-            "schema": {
-              "$ref": "#/definitions/Product"
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Products"
-        ],
-        "summary": "Delete product",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Deleted"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "404": {
-            "description": "Not found"
-          }
+          "200": { "description": "Product retrieved successfully" },
+          "401": { "description": "Unauthorized" }
         }
       }
     },
-
-    "/suppliers": {
+    "/products/add": {
+      "post": {
+        "description": "Add a new product",
+        "responses": {
+          "201": {
+            "description": "Product created successfully",
+            "schema": { "$ref": "#/definitions/Product" }
+          },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/products/edit/{id}": {
+      "put": {
+        "description": "Edit a product by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": {
+          "200": { "description": "Product updated successfully" },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/products/delete/{id}": {
+      "delete": {
+        "description": "Delete a product by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": {
+          "200": { "description": "Product deleted successfully" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/category/": {
       "get": {
-        "tags": [
-          "Suppliers"
-        ],
-        "summary": "List suppliers",
+        "description": "Get all categories",
         "responses": {
           "200": {
-            "description": "Suppliers list",
+            "description": "Categories retrieved successfully",
             "schema": {
               "type": "array",
-              "items": {
-                "$ref": "#/definitions/Supplier"
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Suppliers"
-        ],
-        "summary": "Create supplier",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/SupplierCreate"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Supplier created",
-            "schema": {
-              "$ref": "#/definitions/Supplier"
+              "items": { "$ref": "#/definitions/Category" }
             }
           },
-          "400": {
-            "description": "Invalid input"
-          }
+          "default": { "description": "" }
         }
       }
     },
-
-    "/suppliers/{id}": {
+    "/category/{id}": {
       "get": {
-        "tags": [
-          "Suppliers"
-        ],
-        "summary": "Get supplier",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
+        "description": "Get a category by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": {
-            "description": "Supplier returned",
-            "schema": {
-              "$ref": "#/definitions/Supplier"
-            }
-          },
-          "404": {
-            "description": "Not found"
-          }
+          "200": { "description": "Category retrieved successfully" },
+          "default": { "description": "" }
         }
-      },
+      }
+    },
+    "/category/add": {
+      "post": {
+        "description": "Add a new category",
+        "responses": {
+          "201": {
+            "description": "Category created successfully",
+            "schema": { "$ref": "#/definitions/Category" }
+          },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/category/update/{id}": {
       "put": {
-        "tags": [
-          "Suppliers"
-        ],
-        "summary": "Update supplier",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/SupplierCreate"
-            }
-          }
-        ],
+        "description": "Update a category by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": {
-            "description": "Supplier updated",
-            "schema": {
-              "$ref": "#/definitions/Supplier"
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          }
+          "200": { "description": "Category updated successfully" },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
         }
-      },
+      }
+    },
+    "/category/delete/{id}": {
       "delete": {
-        "tags": [
-          "Suppliers"
-        ],
-        "summary": "Delete supplier",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
+        "description": "Delete a category by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "204": {
-            "description": "Deleted"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
+          "200": { "description": "Category deleted successfully" },
+          "401": { "description": "Unauthorized" }
         }
       }
     },
-
-    "/orders": {
+    "/orders/": {
       "get": {
-        "tags": [
-          "Orders"
-        ],
-        "summary": "List orders (paginated)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "page",
-            "in": "query",
-            "type": "integer"
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "type": "integer"
-          }
-        ],
+        "description": "Get all orders",
         "responses": {
           "200": {
-            "description": "Orders list",
+            "description": "Orders retrieved successfully",
             "schema": {
-              "type": "object",
-              "properties": {
-                "docs": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/definitions/Order"
-                  }
-                },
-                "total": {
-                  "type": "integer"
-                },
-                "page": {
-                  "type": "integer"
-                },
-                "limit": {
-                  "type": "integer"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Orders"
-        ],
-        "summary": "Create an order",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/OrderCreate"
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Order created",
-            "schema": {
-              "$ref": "#/definitions/Order"
+              "type": "array",
+              "items": { "$ref": "#/definitions/Order" }
             }
           },
-          "400": {
-            "description": "Invalid input"
-          }
+          "401": { "description": "Unauthorized" }
         }
       }
     },
-
     "/orders/{id}": {
       "get": {
-        "tags": [
-          "Orders"
-        ],
-        "summary": "Get order by ID",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
+        "description": "Get an order by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": {
-            "description": "Order returned",
-            "schema": {
-              "$ref": "#/definitions/Order"
-            }
-          },
-          "404": {
-            "description": "Not found"
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Orders"
-        ],
-        "summary": "Update order status",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "status": {
-                  "type": "string",
-                  "enum": [
-                    "Pending",
-                    "Paid"
-                  ]
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Order updated",
-            "schema": {
-              "$ref": "#/definitions/Order"
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Orders"
-        ],
-        "summary": "Delete order",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "204": {
-            "description": "Deleted"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
+          "200": { "description": "Order retrieved successfully" },
+          "401": { "description": "Unauthorized" }
         }
       }
     },
-
-    "/audits": {
-      "get": {
-        "tags": [
-          "Audits"
-        ],
-        "summary": "Get inventory audit logs",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
+    "/orders/update/{id}": {
+      "put": {
+        "description": "Update an order by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": {
-            "description": "Audit list",
-            "schema": {
-              "type": "array",
-              "items": {
-                "$ref": "#/definitions/InventoryAudit"
-              }
-            }
-          }
+          "200": { "description": "Order updated successfully" },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
         }
-      },
+      }
+    },
+    "/orders/add": {
       "post": {
-        "tags": [
-          "Audits"
-        ],
-        "summary": "Create inventory audit record",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/InventoryAuditCreate"
-            }
-          }
-        ],
+        "description": "Add a new order",
         "responses": {
           "201": {
-            "description": "Audit recorded",
-            "schema": {
-              "$ref": "#/definitions/InventoryAudit"
-            }
+            "description": "Order created successfully",
+            "schema": { "$ref": "#/definitions/Order" }
           },
-          "400": {
-            "description": "Invalid input"
-          }
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
         }
       }
     },
-
+    "/orders/delete/{id}": {
+      "delete": {
+        "description": "Delete an order by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": {
+          "200": { "description": "Order deleted successfully" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/suppliers/add": {
+      "post": {
+        "description": "Add a new supplier",
+        "responses": {
+          "201": {
+            "description": "Supplier created successfully",
+            "schema": { "$ref": "#/definitions/Supplier" }
+          },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/suppliers/update/{id}": {
+      "put": {
+        "description": "Update a supplier by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": {
+          "200": { "description": "Supplier updated successfully" },
+          "400": { "description": "Bad Request" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/suppliers/{id}": {
+      "get": {
+        "description": "Get a supplier by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": {
+          "200": { "description": "Supplier retrieved successfully" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/suppliers/delete/{id}": {
+      "delete": {
+        "description": "Delete a supplier by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
+        "responses": {
+          "200": { "description": "Supplier deleted successfully" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
+    "/audits/": {
+      "get": {
+        "description": "Get all audit logs",
+        "responses": {
+          "200": { "description": "Audit logs retrieved successfully" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
     "/audits/{id}": {
       "get": {
-        "tags": [
-          "Audits"
-        ],
-        "summary": "Get audit record",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
+        "description": "Get an audit log by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": {
-            "description": "Audit returned",
-            "schema": {
-              "$ref": "#/definitions/InventoryAudit"
-            }
-          },
-          "404": {
-            "description": "Not found"
-          }
+          "200": { "description": "Audit log retrieved successfully" },
+          "401": { "description": "Unauthorized" }
         }
-      },
+      }
+    },
+    "/audits/update/{id}": {
       "put": {
-        "tags": [
-          "Audits"
-        ],
-        "summary": "Update audit (mark read / add note)",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "isRead": {
-                  "type": "boolean"
-                },
-                "note": {
-                  "type": "string"
-                }
-              }
-            }
-          }
-        ],
+        "description": "Update an audit record by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "200": {
-            "description": "Audit updated",
-            "schema": {
-              "$ref": "#/definitions/InventoryAudit"
-            }
-          },
-          "400": {
-            "description": "Bad request"
-          }
+          "200": { "description": "Audit updated successfully" },
+          "401": { "description": "Unauthorized" }
         }
-      },
+      }
+    },
+    "/audits/delete/{id}": {
       "delete": {
-        "tags": [
-          "Audits"
-        ],
-        "summary": "Delete audit record",
-        "security": [
-          {
-            "BearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "type": "string"
-          }
-        ],
+        "description": "Delete an audit log by ID",
+        "parameters": [{ "name": "id", "in": "path", "required": true, "type": "string" }],
         "responses": {
-          "204": {
-            "description": "Deleted"
-          },
-          "401": {
-            "description": "Unauthorized"
-          }
+          "200": { "description": "Audit log deleted successfully" },
+          "401": { "description": "Unauthorized" }
         }
       }
     }
   },
   "definitions": {
-    "Category": {
+    "User": {
       "type": "object",
       "properties": {
-        "_id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string",
-          "example": "Pharmaceuticals"
-        }
-      }
-    },
-    "CategoryCreate": {
-      "type": "object",
-      "required": [
-        "name"
-      ],
-      "properties": {
-        "name": {
-          "type": "string",
-          "example": "Pharmaceuticals"
-        }
-      }
-    },
-    "Product": {
-      "type": "object",
-      "properties": {
-        "_id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string",
-          "example": "Paracetamol"
-        },
-        "sku": {
-          "type": "string",
-          "example": "PRC-001"
-        },
-        "description": {
-          "type": "string",
-          "example": "Pain relief tablet"
-        },
-        "category": {
-          "type": "string",
-          "example": "60d5f4832b8b4f1e9c1a5678"
-        },
-        "costPrice": {
-          "type": "number",
-          "example": 100
-        },
-        "sellPrice": {
-          "type": "number",
-          "example": 150
-        },
-        "quantity": {
-          "type": "number",
-          "example": 200
-        },
-        "reorderLevel": {
-          "type": "number",
-          "example": 10
-        },
-        "supplierId": {
-          "type": "string",
-          "example": "60d5f4832b8b4f1e9c1a1234"
-        },
-        "unit": {
-          "type": "string",
-          "enum": [
-            "Pieces",
-            "Packs",
-            "Dozen",
-            "Box"
-          ],
-          "example": "Packs"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
-    "ProductCreate": {
-      "type": "object",
-      "required": [
-        "name",
-        "sku",
-        "category",
-        "costPrice",
-        "sellPrice"
-      ],
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "sku": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "category": {
-          "type": "string"
-        },
-        "costPrice": {
-          "type": "number"
-        },
-        "sellPrice": {
-          "type": "number"
-        },
-        "quantity": {
-          "type": "number"
-        },
-        "reorderLevel": {
-          "type": "number"
-        },
-        "supplierId": {
-          "type": "string"
-        },
-        "unit": {
-          "type": "string",
-          "enum": [
-            "Pieces",
-            "Packs",
-            "Dozen",
-            "Box"
-          ]
-        }
+        "googleId": { "type": "string", "example": "1234567890abcdef" },
+        "fullName": { "type": "string", "example": "John Doe" },
+        "email": { "type": "string", "example": "johndoe@example.com" },
+        "picture": { "type": "string", "example": "https://example.com/avatar.jpg" },
+        "local": { "type": "string", "example": "en-US" },
+        "locale": { "type": "string", "example": "US" },
+        "role": { "type": "string", "example": "Client" },
+        "joinedAt": { "type": "string", "example": "2025-10-16T00:00:00.000Z" }
       }
     },
     "Supplier": {
       "type": "object",
       "properties": {
-        "_id": {
-          "type": "string"
-        },
-        "name": {
-          "type": "string",
-          "example": "MedTech Supplies Ltd."
-        },
-        "email": {
-          "type": "string",
-          "example": "contact@medtech.com"
-        },
-        "phone": {
-          "type": "string",
-          "example": "+2348012345678"
-        },
-        "address": {
-          "type": "string",
-          "example": "12 Main Street, Lagos, Nigeria"
-        },
+        "name": { "type": "string", "example": "MedTech Supplies Ltd." },
+        "email": { "type": "string", "example": "contact@medtech.com" },
+        "phone": { "type": "string", "example": "+2348012345678" },
+        "address": { "type": "string", "example": "12 Main Street, Lagos, Nigeria" },
         "productsSupplied": {
           "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
+          "example": ["60d5f4832b8b4f1e9c1a1234"],
+          "items": { "type": "string" }
+        },
+        "createdAt": { "type": "string", "example": "2025-10-16T00:00:00.000Z" },
+        "updatedAt": { "type": "string", "example": "2025-10-16T00:00:00.000Z" }
       }
     },
-    "SupplierCreate": {
+    "Product": {
       "type": "object",
-      "required": [
-        "name"
-      ],
       "properties": {
-        "name": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string"
-        },
-        "phone": {
-          "type": "string"
-        },
-        "address": {
-          "type": "string"
-        },
-        "productsSupplied": {
-          "type": "array",
-          "items": {
-            "type": "string"
-          }
-        }
+        "name": { "type": "string", "example": "Paracetamol" },
+        "sku": { "type": "string", "example": "PRC-001" },
+        "description": { "type": "string", "example": "Pain relief tablet" },
+        "category": { "type": "string", "example": "60d5f4832b8b4f1e9c1a5678" },
+        "costPrice": { "type": "number", "example": 100 },
+        "sellPrice": { "type": "number", "example": 150 },
+        "quantity": { "type": "number", "example": 200 },
+        "reorderLevel": { "type": "number", "example": 10 },
+        "supplierId": { "type": "string", "example": "60d5f4832b8b4f1e9c1a1234" },
+        "unit": { "type": "string", "example": "Packs" },
+        "createdAt": { "type": "string", "example": "2025-10-16T00:00:00.000Z" },
+        "updatedAt": { "type": "string", "example": "2025-10-16T00:00:00.000Z" }
       }
     },
     "OrderItem": {
       "type": "object",
       "properties": {
-        "productId": {
-          "type": "string",
-          "example": "60d5f4832b8b4f1e9c1a5678"
-        },
-        "name": {
-          "type": "string",
-          "example": "Paracetamol"
-        },
-        "quantity": {
-          "type": "number",
-          "example": 5
-        },
-        "price": {
-          "type": "number",
-          "example": 150
-        },
-        "subtotal": {
-          "type": "number",
-          "example": 750
-        }
+        "productId": { "type": "string", "example": "60d5f4832b8b4f1e9c1a5678" },
+        "name": { "type": "string", "example": "Paracetamol" },
+        "quantity": { "type": "number", "example": 5 },
+        "price": { "type": "number", "example": 150 },
+        "subtotal": { "type": "number", "example": 750 }
       }
     },
     "Order": {
       "type": "object",
       "properties": {
-        "_id": {
-          "type": "string"
-        },
         "items": {
           "type": "array",
-          "items": {
-            "$ref": "#/definitions/OrderItem"
-          }
+          "items": { "$ref": "#/definitions/OrderItem" }
         },
-        "total": {
-          "type": "number",
-          "example": 750
-        },
-        "tax": {
-          "type": "number",
-          "example": 0
-        },
-        "discount": {
-          "type": "number",
-          "example": 0
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "Pending",
-            "Paid"
-          ],
-          "example": "Pending"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
+        "total": { "type": "number", "example": 750 },
+        "tax": { "type": "number", "example": 0 },
+        "discount": { "type": "number", "example": 0 },
+        "status": { "type": "string", "example": "Pending" },
+        "createdAt": { "type": "string", "example": "2025-10-16T00:00:00.000Z" },
+        "updatedAt": { "type": "string", "example": "2025-10-16T00:00:00.000Z" }
       }
     },
-    "OrderCreate": {
-      "type": "object",
-      "required": [
-        "items",
-        "total"
-      ],
-      "properties": {
-        "items": {
-          "type": "array",
-          "items": {
-            "$ref": "#/definitions/OrderItem"
-          }
-        },
-        "total": {
-          "type": "number"
-        },
-        "tax": {
-          "type": "number"
-        },
-        "discount": {
-          "type": "number"
-        }
-      }
-    },
-    "InventoryAudit": {
+    "Category": {
       "type": "object",
       "properties": {
-        "_id": {
-          "type": "string"
-        },
-        "productId": {
-          "type": "string",
-          "example": "60d5f4832b8b4f1e9c1a5678"
-        },
-        "userId": {
-          "type": "string",
-          "example": "60d5f4832b8b4f1e9c1a9999"
-        },
-        "action": {
-          "type": "string",
-          "enum": [
-            "Add Stock",
-            "Remove Stock",
-            "Sale",
-            "Adjustment"
-          ],
-          "example": "Add Stock"
-        },
-        "quantityChanged": {
-          "type": "number",
-          "example": 10
-        },
-        "isRead": {
-          "type": "boolean",
-          "example": false
-        },
-        "note": {
-          "type": "string",
-          "example": "Restocked 10 units"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "updatedAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      }
-    },
-    "InventoryAuditCreate": {
-      "type": "object",
-      "required": [
-        "productId",
-        "userId",
-        "action",
-        "quantityChanged"
-      ],
-      "properties": {
-        "productId": {
-          "type": "string"
-        },
-        "userId": {
-          "type": "string"
-        },
-        "action": {
-          "type": "string",
-          "enum": [
-            "Add Stock",
-            "Remove Stock",
-            "Sale",
-            "Adjustment"
-          ]
-        },
-        "quantityChanged": {
-          "type": "number"
-        },
-        "note": {
-          "type": "string"
-        }
-      }
-    },
-    "User": {
-      "type": "object",
-      "properties": {
-        "googleId": {
-          "type": "string",
-          "example": "1234567890abcdef"
-        },
-        "fullName": {
-          "type": "string",
-          "example": "John Doe"
-        },
-        "email": {
-          "type": "string",
-          "example": "johndoe@example.com"
-        },
-        "picture": {
-          "type": "string",
-          "example": "https://example.com/avatar.jpg"
-        },
-        "local": {
-          "type": "string",
-          "example": "en-US"
-        },
-        "locale": {
-          "type": "string",
-          "example": "US"
-        },
-        "role": {
-          "type": "string",
-          "enum": [
-            "Admin",
-            "Manager",
-            "Staff",
-            "Client"
-          ],
-          "example": "Client"
-        },
-        "joinedAt": {
-          "type": "string",
-          "format": "date-time",
-          "example": "2025-10-16T00:00:00.000Z"
-        }
+        "name": { "type": "string", "example": "Pharmaceuticals" }
       }
     }
   }
