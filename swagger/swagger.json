@@ -38,6 +38,15 @@
         }
       }
     },
+    "/auth/status": {
+      "get": {
+        "description": "LoggedIn Status for authenticated user",
+        "responses": {
+          "200": { "description": "LoggedIn successfully" },
+          "401": { "description": "Unauthorized" }
+        }
+      }
+    },
     "/auth/logout": {
       "get": {
         "description": "Logout the currently authenticated user",
