@@ -51,6 +51,21 @@ auth.callback = async (req, res, next) => {
     }
 }
 
+auth.checkAuthStatus = async (req, res, next) => {
+    try {
+        if (req.user.is_authenticated) {
+            return res.status(200).json({
+                status: 200,
+                loggedIn: true,
+                message: "user successfully loggedIn",
+                result: req.user
+            });
+        }
+        return res.redirect('/google')
+    } catch (error) {
+        next(error)
+    }
+}
 
 
 module.exports = auth;

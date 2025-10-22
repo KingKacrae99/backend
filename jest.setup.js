@@ -1,6 +1,7 @@
 // jest.setup.js
 const mongoose = require('mongoose');
 const { MongoMemoryServer } = require('mongodb-memory-server');
+const server = require('./server');
 
 let mongoServer;
 
@@ -22,6 +23,7 @@ afterAll(async () => {
   await mongoose.connection.dropDatabase();
   await mongoose.connection.close();
   if (mongoServer) await mongoServer.stop();
-  await new Promise(resolve => setTimeout(resolve, 500)); 
+  
+  server.close()
 });
 
