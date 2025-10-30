@@ -28,7 +28,10 @@ app.use(session({
 }));
 
 app
-  .use(cors())
+  .use(cors({
+    origin: 'http://127.0.0.1:5500/',
+    credentials: true
+  }))
   .use(bodyParser.json())
   .use(bodyParser.urlencoded({ extended: true }))
   .use(cookieParser());

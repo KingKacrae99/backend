@@ -13,14 +13,14 @@ const validationHandler = (req, res, next) => {
 
 
 const validateAddSupplier = [
-    body('contactName')
+    body('name')
         .trim()
-        .notEmpty().withMessage('Contact name is required.')
-        .isLength({ min: 3 }).withMessage('Contact name must be at least 3 characters long.')
+        .notEmpty().withMessage('supplier name is required.')
+        .isLength({ min: 3 }).withMessage('Supplier name must be at least 3 characters long.')
         .custom(async value => {
-            const existingSupplier = await supplier.findOne({ contactName: value });
+            const existingSupplier = await supplier.findOne({ name: value });
             if (existingSupplier) {
-                throw new Error('A supplier with this contact name already exists.');
+                throw new Error('A supplier with this name already exists.');
             }
         }),
         
@@ -49,15 +49,14 @@ const validateAddSupplier = [
 
 
 const validateUpdateSupplier = [
-    
     // Validate the supplier ID from the URL params
     param('id')
         .isMongoId().withMessage('Invalid supplier ID format.'),
     
-    body('contactName')
+    body('name')
         .optional()
         .trim()
-        .notEmpty().withMessage('Contact name cannot be empty.'),
+        .notEmpty().withMessage('name cannot be empty.'),
     
     
     body('email')
@@ -66,13 +65,17 @@ const validateUpdateSupplier = [
     
     
     body('phone')
-        .optional()
         .trim()
-        .notEmpty().withMessage('Phone number cannot be empty.'),
+        .notEmpty().withMessage('Phone number cannot be empty.')
+        .custom(async value => {
+                const existingSupplier = await supplier.findOne({ phone: value });
+                if (existingSupplier) {
+                    throw new Error('A supplier with this phone number already exists.');
+                }
+            }),
         
     
     body('address')
-        .optional()
         .trim()
         .notEmpty().withMessage('Address cannot be empty.'),
     

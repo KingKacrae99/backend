@@ -1,5 +1,5 @@
 const { body, param } = require('express-validator');
-const { category } = require('../models/category'); 
+const { category } = require('../models'); 
 
 
 const validateAddCategory = [

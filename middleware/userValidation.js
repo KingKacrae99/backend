@@ -1,9 +1,18 @@
 const { body, param } = require('express-validator');
-const { users } = require('../models'); // Adjust path to your User model
+const { users } = require('../models');
 
 const UserRules = [
     param('id').isMongoId().withMessage('Invalid user ID format.'),
 
+    body('googleId')
+        .notEmpty()
+        .withMessage('googleId not provided'),
+    
+    body('fullName')
+        .trim()
+        .notEmpty()
+        .withMessage('Full name cannot be empty.'),
+    
     body('email')
         .isEmail().withMessage('Invalid email format.')
         .custom(async (email, { req }) => {
@@ -13,19 +22,18 @@ const UserRules = [
                 throw new Error('Email is already in use.');
             }
         }),
+    
+    body('picture')
+        .notEmpty()
+        .isURL()
+        .withMessage('Picture must be a valid URL.'),
 
-    body('fullName')
-        .trim()
-        .notEmpty().withMessage('Full name cannot be empty.'),
-
+    body('locale')
+        .optional(),
     body('role')
         .optional()
-        .isIn(['Admin', 'Manager', 'Staff']).withMessage('Invalid user role.'),
+        .isIn(['Admin', 'Manager', 'Staff','Client']).withMessage('Invalid user role.'),
 
-    // 5. Google ID and picture are typically not updated manually.
-    // We can omit validation or add checks for their existence.
-    body('googleId').optional(),
-    body('picture').optional().isURL().withMessage('Picture must be a valid URL.'),
 ];
 
 module.exports = {

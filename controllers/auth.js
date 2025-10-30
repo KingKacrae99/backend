@@ -61,7 +61,11 @@ auth.checkAuthStatus = async (req, res, next) => {
                 result: req.user
             });
         }
-        return res.redirect('/google')
+        return res.status(400).json({
+            status: 400,
+            loggedIn: true,
+            message: "Pls login"
+        })
     } catch (error) {
         next(error)
     }
