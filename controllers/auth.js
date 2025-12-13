@@ -1,9 +1,9 @@
 const passport = require('passport')
 const auth = {}
 
-auth.home = async (req,res,next) => {
+auth.home = async (req, res, next) => {
     try {
-        if (req.session.user) {
+        if (req.user) {
             return res.send(`Welcome ${req.user.fullName}`);
         }
         res.send("Logged Out")

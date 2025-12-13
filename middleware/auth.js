@@ -2,7 +2,7 @@
  * Check if user is logged in
 *********************************************/
 const isAuthenticated = (req, res, next) => {
-    if (req.session.user === undefined) {
+    if (req.user === undefined) {
         return res.status(401).json("You don't have access. Pls login.")
     }
     next()
@@ -12,8 +12,8 @@ const isAuthenticated = (req, res, next) => {
  * Checks if LoggedIn user is admin
 *********************************************/
 const isAdmin = (req, res, next) => {
-    if (req.session.user) {
-        const role = req.session.user.role;
+    if (req.user) {
+        const role = req.user.role;
         if (role === "Admin") {
             return next()
         }
@@ -26,6 +26,7 @@ const isAdmin = (req, res, next) => {
  * Checks if loggedIn user is a staff
 **********************************************/
 const isStaff = (req, res, next) => {
+    req.session.user = req.user;
     if (req.session.user === undefined) {
         return res.status(401).json("You need to login first.")
     }
@@ -42,6 +43,7 @@ const isStaff = (req, res, next) => {
  * Checks if loggedIn user is a manager or admin
 ****************************************************/
 const isManagerOrAdmin = (req, res, next) => {
+    req.session.user = req.user;
     if (req.session.user === undefined) {
         return res.status(401).json("You need to login first.")
     }
