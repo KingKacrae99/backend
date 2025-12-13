@@ -43,7 +43,7 @@ auth.callback = async (req, res, next) => {
     try {
         if (req.user) {
            req.session.user = req.user;
-            return res.redirect('/api');
+            return res.redirect('/');
         }
         return next()
      } catch (err) {
@@ -58,7 +58,7 @@ auth.checkAuthStatus = async (req, res, next) => {
                 status: 200,
                 loggedIn: true,
                 message: "user successfully loggedIn",
-                result: req.user
+                result: resq.user
             });
         }
         return res.status(400).json({
