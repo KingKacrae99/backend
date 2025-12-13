@@ -2,11 +2,12 @@ const passport = require('passport')
 const auth = {}
 
 auth.home = async (req, res, next) => {
+    console.log("LoggedIn User:", req.user)
     try {
         if (req.user) {
             return res.send(`Welcome ${req.user.fullName}`);
         }
-        res.send("Logged Out")
+       res.send("Logged Out")
     } catch (error) {
         next(error)
     }
@@ -58,7 +59,7 @@ auth.checkAuthStatus = async (req, res, next) => {
                 status: 200,
                 loggedIn: true,
                 message: "user successfully loggedIn",
-                result: resq.user
+                result: req.user
             });
         }
         return res.status(400).json({

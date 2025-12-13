@@ -15,10 +15,12 @@ passport.use(new GoogleStrategy({
     async function verify(accessToken, refreshToken, profile, done) {
         try {
             // checks if user exists
+            
             const existingUser = await users.findOne({ googleId: profile.id })
-
+            console.log("Session user:", existingUser)
             // Add user if it doesn't exist
             if (!existingUser) {
+
                 const user = {
                     googleId: profile.id,
                     fullName: profile.displayName,
@@ -41,7 +43,8 @@ passport.use(new GoogleStrategy({
  * Save user info into session  
 *****************************************/
 passport.serializeUser((user, done) => {
-    done(null, user.id)
+    console.log("Session user:", user)
+    done(null, user._id)
 });
 
 /************************************************
