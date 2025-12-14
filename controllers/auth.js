@@ -44,7 +44,7 @@ auth.callback = async (req, res, next) => {
     try {
         if (req.user) {
            req.session.user = req.user;
-            return res.redirect('/');
+            return res.redirect('/status');
         }
         return next()
      } catch (err) {
