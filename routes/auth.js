@@ -11,6 +11,6 @@ router.get('/google/callback', passport.authenticate('google', {
     session: true
 }), authController.callback);
 router.get('/logout', privilege.isAuthenticated, auth.logout)
-router.get('/status', privilege.isAuthenticated, wrapper(authController.checkAuthStatus))
+router.get('/google/status', privilege.isAuthenticated, wrapper(authController.checkAuthStatus))
 
 module.exports = router;
