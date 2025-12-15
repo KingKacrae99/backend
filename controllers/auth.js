@@ -54,7 +54,7 @@ auth.callback = async (req, res, next) => {
 
 auth.checkAuthStatus = async (req, res, next) => {
     try {
-        if (req.user.is_authenticated) {
+        if (req.user.isAuthenticated) {
             return res.status(200).json({
                 status: 200,
                 loggedIn: true,
@@ -64,7 +64,7 @@ auth.checkAuthStatus = async (req, res, next) => {
         }
         return res.status(400).json({
             status: 400,
-            loggedIn: true,
+            loggedIn: false,
             message: "Pls login"
         })
     } catch (error) {
